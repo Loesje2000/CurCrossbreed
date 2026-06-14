@@ -1,0 +1,21 @@
+# Xcode build output
+Builds/MacOSX/build/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Compiled plugin bundles (installed copies — not source)
+*.vst3
+*.component
+*.vst
+*.aaxplugin
+
+# IDE
+.vscode/
+*.swp
+*~
