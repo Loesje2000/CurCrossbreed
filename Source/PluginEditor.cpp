@@ -2,14 +2,14 @@
 #include "RubblesonicLogo.h"
 
 //==============================================================================
-// Module colour tints per type (shown on left indicator strip)
-static const juce::Colour kModuleColour[6] = {
-    juce::Colour (0xFFBB4422),  // 0 Grindhouse — burnt orange
-    juce::Colour (0xFF885533),  // 1 TapeBox-lite — warm brown
-    juce::Colour (0xFF4477AA),  // 2 Voodoo Vibe — steel blue
-    juce::Colour (0xFF557755),  // 3 Memorec-lite — sage green
-    juce::Colour (0xFF7755AA),  // 4 Stereo Widener — muted violet
-    juce::Colour (0xFF996633),  // 5 Tone & Gate — amber brown
+static const juce::Colour kModuleColour[7] = {
+    juce::Colour (0xFFCC5533),  // 0 Grindhouse      -- brick red/burnt sienna
+    juce::Colour (0xFFAA8844),  // 1 TapeBox-lite     -- warm caramel
+    juce::Colour (0xFF5577AA),  // 2 Voodoo Vibe      -- vintage slate blue
+    juce::Colour (0xFF5C8A52),  // 3 Memorec-lite     -- faded moss green
+    juce::Colour (0xFF8A6677),  // 4 Stereo Widener   -- dusty mauve
+    juce::Colour (0xFFAA8822),  // 5 Tone & Gate      -- antique gold
+    juce::Colour (0xFF3D9080),  // 6 Transient Desig. -- verdigris patina
 };
 
 const char* ModuleSlotComponent::moduleName (int type) noexcept
@@ -21,6 +21,7 @@ const char* ModuleSlotComponent::moduleName (int type) noexcept
         case 3: return "MEMOREC LITE";
         case 4: return "WIDENER";
         case 5: return "TONE & GATE";
+        case 6: return "TRANSIENT";
         default: return "MODULE";
     }
 }
@@ -34,7 +35,6 @@ ModuleSlotComponent::ModuleSlotComponent (int moduleType,
 {
     auto& apvts = proc.apvts;
 
-    // Common: bypass button (all module types)
     mBypassBtn.setClickingTogglesState (true);
     mBypassBtn.setName ("BYPASS");
     addAndMakeVisible (mBypassBtn);
@@ -46,13 +46,13 @@ ModuleSlotComponent::ModuleSlotComponent (int moduleType,
         {
             setupCombo (mGhClipTypeBox, mGhClipTypeLabel, "CLIP TYPE",
                         CurCrossbreedAudioProcessor::kGhClipTypeChoices);
-            mGhClipTypeBox.setTooltip ("Clipping character: Soft = smooth, Hard = harsh, Asym = asymmetric, FET = transistor bite");
+            mGhClipTypeBox.setTooltip ("Clipping character: Diode = smooth, Transistor = asymmetric bite, OpAmp = hard limit");
             setupKnob (mGhInputGain,   mGhInputGainLb,   "INPUT");   mGhInputGain.setTooltip   ("Input gain in dB before the first saturation stage");
-            setupKnob (mGhBias,        mGhBiasLb,        "BIAS");    mGhBias.setTooltip        ("DC offset applied to the signal before clipping — adds even/odd harmonic asymmetry");
+            setupKnob (mGhBias,        mGhBiasLb,        "BIAS");    mGhBias.setTooltip        ("Shifts the clipping operating point -- adds even-harmonic asymmetry without DC offset");
             setupKnob (mGhStage1Amt,   mGhStage1AmtLb,   "STAGE 1"); mGhStage1Amt.setTooltip   ("Amount of first-stage soft saturation");
-            setupKnob (mGhStage2Drive, mGhStage2DriveLb, "DRIVE");   mGhStage2Drive.setTooltip  ("Drive into the second clipping stage — set the clip type first");
+            setupKnob (mGhStage2Drive, mGhStage2DriveLb, "DRIVE");   mGhStage2Drive.setTooltip  ("Drive into the second clipping stage -- set the clip type first");
             setupKnob (mGhPreTilt,     mGhPreTiltLb,     "TILT");    mGhPreTilt.setTooltip      ("Tilt EQ before clipping: + boosts highs, - boosts lows");
-            setupKnob (mGhPostTone,    mGhPostToneLb,    "TONE");    mGhPostTone.setTooltip     ("Post-clip tone: high-pass character, sweeps from dark to bright");
+            setupKnob (mGhPostTone,    mGhPostToneLb,    "TONE");    mGhPostTone.setTooltip     ("Post-clip tone: sweeps from dark (low) to bright (high)");
             setupKnob (mGhOutputLevel, mGhOutputLevelLb, "OUTPUT");  mGhOutputLevel.setTooltip  ("Output trim in dB after all processing");
             setupKnob (mGhBlend,       mGhBlendLb,       "BLEND");   mGhBlend.setTooltip        ("Dry/wet blend: 0 = dry, 1 = full effect");
             mBypassBtn.setTooltip ("Bypass this module");
@@ -75,8 +75,8 @@ ModuleSlotComponent::ModuleSlotComponent (int moduleType,
             setupCombo (mTblTapeTypeBox, mTblTapeTypeLabel, "TAPE",
                         CurCrossbreedAudioProcessor::kTblTapeTypeChoices);
             mTblTapeTypeBox.setTooltip ("Tape formulation: changes saturation curve and EQ colouration");
-            setupKnob (mTblWowFlutter,  mTblWowFlutterLb,  "WOW/FLUT"); mTblWowFlutter.setTooltip ("Wow & flutter depth — slow and fast pitch modulation like a degraded tape machine");
-            setupKnob (mTblSaturation,  mTblSaturationLb,  "SAT");       mTblSaturation.setTooltip ("Tape saturation amount — higher values compress and add harmonics");
+            setupKnob (mTblWowFlutter,  mTblWowFlutterLb,  "WOW/FLUT"); mTblWowFlutter.setTooltip ("Wow & flutter depth -- slow and fast pitch modulation like a degraded tape machine");
+            setupKnob (mTblSaturation,  mTblSaturationLb,  "SAT");       mTblSaturation.setTooltip ("Tape saturation amount -- higher values compress and add harmonics");
             setupKnob (mTblTone,        mTblToneLb,        "TONE");       mTblTone.setTooltip       ("Tape head EQ: dark at low values, bright and present at high values");
             setupKnob (mTblMix,         mTblMixLb,         "MIX");        mTblMix.setTooltip        ("Dry/wet blend between clean and tape-processed signal");
             mBypassBtn.setTooltip ("Bypass this module");
@@ -94,12 +94,12 @@ ModuleSlotComponent::ModuleSlotComponent (int moduleType,
         {
             setupCombo (mVvModeBox,      mVvModeLabel,      "MODE",
                         CurCrossbreedAudioProcessor::kVvModeChoices);
-            mVvModeBox.setTooltip ("Phaser = allpass phase shift; Vibrato = pure pitch modulation with no dry signal");
-            setupKnob  (mVvSpeed,        mVvSpeedLb,        "SPEED");  mVvSpeed.setTooltip       ("LFO rate in Hz — how fast the optical element sweeps");
+            mVvModeBox.setTooltip ("Chorus = allpass phaser with dry blend; Vibrato = pure pitch modulation, no dry");
+            setupKnob  (mVvSpeed,        mVvSpeedLb,        "SPEED");  mVvSpeed.setTooltip       ("LFO rate in Hz -- how fast the optical element sweeps");
             setupKnob  (mVvIntensity,    mVvIntensityLb,    "INTENS"); mVvIntensity.setTooltip    ("Depth of the LFO modulation into the allpass stages");
-            setupKnob  (mVvDrive,        mVvDriveLb,        "DRIVE");  mVvDrive.setTooltip        ("Input drive into the lamp preamp — adds harmonic warmth");
-            setupKnob  (mVvLampBias,     mVvLampBiasLb,     "LAMP");   mVvLampBias.setTooltip     ("LDR resting point — shifts the centre frequency of the sweep");
-            setupKnob  (mVvStereoWidth,  mVvStereoWidthLb,  "WIDTH");  mVvStereoWidth.setTooltip  ("Phase offset between L and R LFOs — 0 = mono, 1 = wide stereo");
+            setupKnob  (mVvDrive,        mVvDriveLb,        "DRIVE");  mVvDrive.setTooltip        ("Input drive into the lamp preamp -- adds harmonic warmth");
+            setupKnob  (mVvLampBias,     mVvLampBiasLb,     "LAMP");   mVvLampBias.setTooltip     ("LDR resting point -- shifts the centre frequency of the sweep");
+            setupKnob  (mVvStereoWidth,  mVvStereoWidthLb,  "WIDTH");  mVvStereoWidth.setTooltip  ("Phase offset between L and R LFOs -- 0 = mono, 1 = wide stereo");
             setupKnob  (mVvMix,          mVvMixLb,          "MIX");    mVvMix.setTooltip          ("Dry/wet blend between clean and modulated signal");
             mBypassBtn.setTooltip ("Bypass this module");
 
@@ -117,7 +117,7 @@ ModuleSlotComponent::ModuleSlotComponent (int moduleType,
         case 3: // Memorec-lite
         {
             setupKnob (mMrlTime,     mMrlTimeLb,     "TIME");    mMrlTime.setTooltip     ("Delay time in milliseconds");
-            setupKnob (mMrlFeedback, mMrlFeedbackLb, "FDBK");    mMrlFeedback.setTooltip ("Repeat feedback amount — higher values add more echoes");
+            setupKnob (mMrlFeedback, mMrlFeedbackLb, "FDBK");    mMrlFeedback.setTooltip ("Repeat feedback amount -- higher values add more echoes");
             setupKnob (mMrlTone,     mMrlToneLb,     "TONE");    mMrlTone.setTooltip     ("BBD head EQ: lower cuts highs per repeat, simulating magnetic tape darkening");
             setupKnob (mMrlMix,      mMrlMixLb,      "MIX");     mMrlMix.setTooltip      ("Dry/wet blend between clean and delayed signal");
             mBypassBtn.setTooltip ("Bypass this module");
@@ -132,7 +132,7 @@ ModuleSlotComponent::ModuleSlotComponent (int moduleType,
         //----------------------------------------------------------------------
         case 4: // Stereo Widener
         {
-            setupKnob (mSwWidth,     mSwWidthLb,     "WIDTH");  mSwWidth.setTooltip    ("Stereo width percentage — 100 = normal, 200 = maximum widening above the crossover");
+            setupKnob (mSwWidth,     mSwWidthLb,     "WIDTH");  mSwWidth.setTooltip    ("Stereo width percentage -- 100 = normal, 200 = maximum widening above the crossover");
             setupKnob (mSwCrossover, mSwCrossoverLb, "XOVER");  mSwCrossover.setTooltip("Crossover frequency: widening is applied only to content above this point");
             mBypassBtn.setTooltip ("Bypass this module");
 
@@ -144,16 +144,16 @@ ModuleSlotComponent::ModuleSlotComponent (int moduleType,
         //----------------------------------------------------------------------
         case 5: // Tone & Gate
         {
-            setupKnob (mTgEqLow,   mTgEqLowLb,   "LOW");    mTgEqLow.setTooltip   ("Low shelf gain in dB — shelves at ~80 Hz");
-            setupKnob (mTgEqLoMid, mTgEqLoMidLb, "LO MID"); mTgEqLoMid.setTooltip ("Lo-mid bell gain in dB — centred around 400 Hz");
-            setupKnob (mTgEqMid,   mTgEqMidLb,   "MID");    mTgEqMid.setTooltip   ("Mid bell gain in dB — centred around 1.5 kHz");
-            setupKnob (mTgEqHiMid, mTgEqHiMidLb, "HI MID"); mTgEqHiMid.setTooltip ("Hi-mid bell gain in dB — centred around 5 kHz");
-            setupKnob (mTgEqHigh,  mTgEqHighLb,  "HIGH");   mTgEqHigh.setTooltip  ("High shelf gain in dB — shelves above ~12 kHz");
-            setupKnob (mTgGateThresh,  mTgGateThreshLb,  "THRESH");  mTgGateThresh.setTooltip  ("Gate threshold in dB — signal below this level is attenuated");
+            setupKnob (mTgEqLow,   mTgEqLowLb,   "LOW");    mTgEqLow.setTooltip   ("Low shelf gain in dB -- shelves at ~80 Hz");
+            setupKnob (mTgEqLoMid, mTgEqLoMidLb, "LO MID"); mTgEqLoMid.setTooltip ("Lo-mid bell gain in dB -- centred around 400 Hz");
+            setupKnob (mTgEqMid,   mTgEqMidLb,   "MID");    mTgEqMid.setTooltip   ("Mid bell gain in dB -- centred around 1.5 kHz");
+            setupKnob (mTgEqHiMid, mTgEqHiMidLb, "HI MID"); mTgEqHiMid.setTooltip ("Hi-mid bell gain in dB -- centred around 5 kHz");
+            setupKnob (mTgEqHigh,  mTgEqHighLb,  "HIGH");   mTgEqHigh.setTooltip  ("High shelf gain in dB -- shelves above ~12 kHz");
+            setupKnob (mTgGateThresh,  mTgGateThreshLb,  "THRESH");  mTgGateThresh.setTooltip  ("Gate threshold in dB -- signal below this level is attenuated");
             setupKnob (mTgGateRelease, mTgGateReleaseLb, "RELEASE"); mTgGateRelease.setTooltip ("Gate release time in milliseconds");
             setupCombo (mTgSidechainBox, mTgSidechainLabel, "SIDECHAIN",
                         CurCrossbreedAudioProcessor::kTgSidechainChoices);
-            mTgSidechainBox.setTooltip ("Sidechain high-pass filter for the gate detector — filters low-end before gate sensing so bass doesn't trigger the gate");
+            mTgSidechainBox.setTooltip ("Sidechain filter for the gate detector");
 
             mTgGateBypassBtn.setClickingTogglesState (true);
             mTgGateBypassBtn.setName ("BYPASS");
@@ -173,16 +173,34 @@ ModuleSlotComponent::ModuleSlotComponent (int moduleType,
             mTgGateBypassAttach = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(apvts, "tg_gateBypass",   mTgGateBypassBtn);
             break;
         }
+        //----------------------------------------------------------------------
+        case 6: // Transient Designer
+        {
+            setupCombo (mTdSpeedBox, mTdSpeedLabel, "SPEED",
+                        CurCrossbreedAudioProcessor::kTdSpeedChoices);
+            mTdSpeedBox.setTooltip ("Envelope follower speed -- Fast reacts to sharp hits, Slow for longer musical phrases");
+            setupKnob (mTdAttack,  mTdAttackLb,  "ATTACK");  mTdAttack.setTooltip  ("Attack transient gain in dB -- positive punches up hits, negative softens them");
+            setupKnob (mTdSustain, mTdSustainLb, "SUSTAIN"); mTdSustain.setTooltip ("Sustain/body gain in dB -- positive extends the tail, negative tightens the decay");
+            setupKnob (mTdMix,     mTdMixLb,     "MIX");     mTdMix.setTooltip     ("Dry/wet blend -- blend back the original signal for parallel shaping");
+            mBypassBtn.setTooltip ("Bypass this module");
+
+            mBypassAttach  = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(apvts, "td_bypass",  mBypassBtn);
+            mTdSpeedAttach = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(apvts, "td_speed", mTdSpeedBox);
+            mTdAttackA     = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "td_attack",  mTdAttack);
+            mTdSustainA    = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "td_sustain", mTdSustain);
+            mTdMixA        = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "td_mix",     mTdMix);
+            break;
+        }
         default: break;
     }
 }
 
 ModuleSlotComponent::~ModuleSlotComponent()
 {
-    // Attachments must be destroyed before controls
     mBypassAttach.reset();
     mGhClipTypeAttach.reset();  mTblTapeTypeAttach.reset();
     mVvModeAttach.reset();      mTgSidechainAttach.reset();
+    mTdSpeedAttach.reset();
     mGhInputGainA.reset();      mGhBiasA.reset();
     mGhStage1AmtA.reset();      mGhStage2DriveA.reset();
     mGhPreTiltA.reset();        mGhPostToneA.reset();
@@ -199,6 +217,8 @@ ModuleSlotComponent::~ModuleSlotComponent()
     mTgEqMidA.reset();          mTgEqHiMidA.reset();
     mTgEqHighA.reset();         mTgGateThreshA.reset();
     mTgGateReleaseA.reset();    mTgGateBypassAttach.reset();
+    mTdAttackA.reset();         mTdSustainA.reset();
+    mTdMixA.reset();
 }
 
 //==============================================================================
@@ -233,21 +253,19 @@ void ModuleSlotComponent::setupCombo (juce::ComboBox& box, juce::Label& lbl,
 //==============================================================================
 void ModuleSlotComponent::resized()
 {
-    const int H  = getHeight();   // 109
-    const int kCtrl = 212;        // controls start X
+    const int H  = getHeight();
+    const int kCtrl = 212;
     const int kKnobY = 16, kKnobW = 48, kKnobH = 48, kLblY = 66, kLblH = 12;
     const int kStep  = 56;
     const int kComboW = 110, kComboH = 22, kComboY = (H - kComboH) / 2 - 14;
     const int kComboLblY = kComboY + kComboH + 4, kComboLblH = 12;
 
-    // Bypass button: x=26, centred vertically, 52×24
     mBypassBtn.setBounds (26, (H - 24) / 2, 52, 24);
 
     int x = kCtrl;
 
     switch (mModuleType)
     {
-        //----------------------------------------------------------------------
         case 0: // Grindhouse
         {
             mGhClipTypeLabel.setBounds (x, kComboLblY, kComboW, kComboLblH);
@@ -269,7 +287,6 @@ void ModuleSlotComponent::resized()
             placeKnob (mGhBlend,       mGhBlendLb);
             break;
         }
-        //----------------------------------------------------------------------
         case 1: // TapeBox-lite
         {
             mTblTapeTypeLabel.setBounds (x, kComboLblY, kComboW, kComboLblH);
@@ -287,7 +304,6 @@ void ModuleSlotComponent::resized()
             placeKnob (mTblMix,        mTblMixLb);
             break;
         }
-        //----------------------------------------------------------------------
         case 2: // Voodoo Vibe
         {
             mVvModeLabel.setBounds (x, kComboLblY, kComboW, kComboLblH);
@@ -307,7 +323,6 @@ void ModuleSlotComponent::resized()
             placeKnob (mVvMix,         mVvMixLb);
             break;
         }
-        //----------------------------------------------------------------------
         case 3: // Memorec-lite
         {
             auto placeKnob = [&](juce::Slider& k, juce::Label& l) {
@@ -321,17 +336,15 @@ void ModuleSlotComponent::resized()
             placeKnob (mMrlMix,      mMrlMixLb);
             break;
         }
-        //----------------------------------------------------------------------
         case 4: // Stereo Widener
         {
-            mSwWidth.setBounds     (x,       kKnobY, kKnobW, kKnobH);
-            mSwWidthLb.setBounds   (x,       kLblY,  kKnobW, kLblH); x += kStep;
-            mSwCrossover.setBounds (x,       kKnobY, kKnobW, kKnobH);
-            mSwCrossoverLb.setBounds(x,      kLblY,  kKnobW, kLblH);
+            mSwWidth.setBounds      (x,  kKnobY, kKnobW, kKnobH);
+            mSwWidthLb.setBounds    (x,  kLblY,  kKnobW, kLblH);  x += kStep;
+            mSwCrossover.setBounds  (x,  kKnobY, kKnobW, kKnobH);
+            mSwCrossoverLb.setBounds(x,  kLblY,  kKnobW, kLblH);
             break;
         }
-        //----------------------------------------------------------------------
-        case 5: // Tone & Gate — 5-band EQ + gate
+        case 5: // Tone & Gate
         {
             auto placeKnob = [&](juce::Slider& k, juce::Label& l) {
                 k.setBounds (x, kKnobY, kKnobW, kKnobH);
@@ -344,16 +357,29 @@ void ModuleSlotComponent::resized()
             placeKnob (mTgEqHiMid, mTgEqHiMidLb);
             placeKnob (mTgEqHigh,  mTgEqHighLb);
             x += 8;
-
             placeKnob (mTgGateThresh,  mTgGateThreshLb);
             placeKnob (mTgGateRelease, mTgGateReleaseLb);
             x += 4;
-
             mTgSidechainLabel.setBounds(x, kComboLblY, kComboW, kComboLblH);
             mTgSidechainBox.setBounds  (x, kComboY,    kComboW, kComboH);
             x += kComboW + 8;
-
             mTgGateBypassBtn.setBounds (x, (H - 24) / 2, 58, 24);
+            break;
+        }
+        case 6: // Transient Designer
+        {
+            mTdSpeedLabel.setBounds (x, kComboLblY, kComboW, kComboLblH);
+            mTdSpeedBox.setBounds   (x, kComboY,    kComboW, kComboH);
+            x += kComboW + 8;
+
+            auto placeKnob = [&](juce::Slider& k, juce::Label& l) {
+                k.setBounds (x, kKnobY, kKnobW, kKnobH);
+                l.setBounds (x, kLblY,  kKnobW, kLblH);
+                x += kStep;
+            };
+            placeKnob (mTdAttack,  mTdAttackLb);
+            placeKnob (mTdSustain, mTdSustainLb);
+            placeKnob (mTdMix,     mTdMixLb);
             break;
         }
         default: break;
@@ -366,26 +392,32 @@ void ModuleSlotComponent::paint (juce::Graphics& g)
     const int W = getWidth(), H = getHeight();
     const juce::Colour modCol = kModuleColour[mModuleType];
 
-    // Coloured left indicator bar
+    // Subtle full-row tint so each module strip has its own visual identity
+    g.setColour (modCol.withAlpha (0.10f));
+    g.fillRect  (0, 0, W, H);
+
+    // Darker tint on the drag-handle area
+    g.setColour (modCol.withAlpha (0.28f));
+    g.fillRect  (0, 0, 22, H);
+
+    // Solid accent stripe
     g.setColour (modCol);
     g.fillRect  (22, 0, 4, H);
 
-    // Drag handle dots
-    g.setColour (modCol.withAlpha (0.8f));
+    // Drag-handle dots
+    g.setColour (modCol.brighter (0.5f).withAlpha (0.9f));
     for (int row = 0; row < 3; ++row)
         for (int col = 0; col < 2; ++col)
             g.fillEllipse (6.f + col * 6.f, (float)(H/2 - 9 + row * 9), 3.f, 3.f);
 
     // Module name
-    g.setColour (modCol.brighter (0.4f));
+    g.setColour (modCol.brighter (0.55f));
     g.setFont (juce::Font (juce::FontOptions().withHeight (11.5f).withStyle ("Bold")));
     g.drawFittedText (moduleName (mModuleType), 84, 0, 126, H,
                       juce::Justification::centredLeft, 2);
 
-    // Vertical separator after name
     g.setColour (juce::Colour (0xFF5A4030));
     g.fillRect (210, 8, 1, H - 16);
-
 }
 
 //==============================================================================
@@ -397,30 +429,31 @@ CurCrossbreedAudioProcessorEditor::CurCrossbreedAudioProcessorEditor
 {
     setLookAndFeel (&mLAF);
 
-    // Create 6 slot components before setSize() so resized() finds them ready
-    for (int m = 0; m < 6; ++m)
+    for (int m = 0; m < 7; ++m)
     {
         mSlots[m] = std::make_unique<ModuleSlotComponent> (m, p);
+        // Slot itself passes clicks through to the editor (so the drag handle
+        // area reaches mouseDown here), but child controls stay fully interactive.
+        mSlots[m]->setInterceptsMouseClicks (false, true);
         addAndMakeVisible (*mSlots[m]);
     }
 
-    // Sync visual order from processor's module order
     mVisualOrder = p.mModuleOrder;
 
     // Global controls
     setupKnob  (mInputGainKnob,  mInputGainLabel,  "IN GAIN");
-    mInputGainKnob.setTooltip  ("Rack input gain in dB — applied before any modules");
+    mInputGainKnob.setTooltip  ("Rack input gain in dB -- applied before any modules");
     setupKnob  (mOutputGainKnob, mOutputGainLabel, "OUT GAIN");
-    mOutputGainKnob.setTooltip ("Rack output gain in dB — applied after all modules");
+    mOutputGainKnob.setTooltip ("Rack output gain in dB -- applied after all modules");
     setupKnob  (mMixKnob,        mMixLabel,        "MIX");
-    mMixKnob.setTooltip        ("Global dry/wet: 0 = fully dry (all modules bypassed), 1 = fully wet");
+    mMixKnob.setTooltip        ("Global dry/wet: 0 = fully dry, 1 = fully wet");
     setupCombo (mOversampleBox,  mOversampleLabel, "OVERSAMPLE",
                 CurCrossbreedAudioProcessor::kOversampleChoices);
-    mOversampleBox.setTooltip  ("Oversampling factor — higher values reduce aliasing from saturation modules at the cost of CPU");
+    mOversampleBox.setTooltip  ("Oversampling factor -- higher values reduce aliasing from saturation modules at the cost of CPU");
 
     mBypassBtn.setClickingTogglesState (true);
     mBypassBtn.setName ("BYPASS");
-    mBypassBtn.setTooltip ("Bypass the entire rack — passes audio through unprocessed");
+    mBypassBtn.setTooltip ("Bypass the entire rack -- passes audio through unprocessed");
     addAndMakeVisible (mBypassBtn);
 
     mInputGainA  = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>
@@ -434,7 +467,81 @@ CurCrossbreedAudioProcessorEditor::CurCrossbreedAudioProcessorEditor
     mBypassA     = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>
                    (p.apvts, "rack_bypass",     mBypassBtn);
 
-    setSize (kW, kH);  // triggers resized() — all children are ready by now
+    // Preset selector
+    mPresetLabel.setText ("PRESET", juce::dontSendNotification);
+    mPresetLabel.setFont (juce::Font (juce::FontOptions().withHeight (10.5f)));
+    mPresetLabel.setJustificationType (juce::Justification::centredLeft);
+    addAndMakeVisible (mPresetLabel);
+
+    mPresetBox.setColour (juce::ComboBox::textColourId,       juce::Colours::transparentBlack);
+    mPresetBox.setColour (juce::ComboBox::backgroundColourId, juce::Colours::transparentBlack);
+    mPresetBox.setColour (juce::ComboBox::outlineColourId,    juce::Colours::transparentBlack);
+    mPresetBox.setTooltip ("Load a preset. Drag handle strips on the left to reorder modules.");
+    mPresetBox.onChange = [this]()
+    {
+        const int id = mPresetBox.getSelectedId();
+        if (id <= 0) return;
+        if (id <= CurCrossbreedAudioProcessor::kNumPresets)
+        {
+            const int idx = id - 1;
+            mProc.loadPreset (idx);
+            const auto& preset = CurCrossbreedAudioProcessor::kPresets[idx];
+            for (int i = 0; i < 7; ++i)
+                mVisualOrder[i] = preset.order[i];
+            updateSlotPositions();
+            repaint();
+        }
+        else
+        {
+            const int userIdx = id - CurCrossbreedAudioProcessor::kNumPresets - 1;
+            if (userIdx >= 0 && userIdx < (int)mUserPresetFiles.size())
+                loadUserPreset (mUserPresetFiles[(size_t)userIdx]);
+        }
+    };
+    addAndMakeVisible (mPresetBox);
+    reloadPresetList();
+    mPresetBox.setSelectedId (p.currentPreset + 1, juce::dontSendNotification);
+
+    // Prev / Next arrows and Save button
+    mPresetPrevBtn.setTooltip ("Previous preset");
+    mPresetNextBtn.setTooltip ("Next preset");
+    mPresetSaveBtn.setTooltip ("Save current settings as a named user preset");
+    mPresetPrevBtn.onClick = [this]()
+    {
+        const int cur = mPresetBox.getSelectedItemIndex();
+        if (cur > 0) mPresetBox.setSelectedItemIndex (cur - 1);
+    };
+    mPresetNextBtn.onClick = [this]()
+    {
+        const int cur = mPresetBox.getSelectedItemIndex();
+        if (cur < mPresetBox.getNumItems() - 1)
+            mPresetBox.setSelectedItemIndex (cur + 1);
+    };
+    mPresetSaveBtn.onClick = [this]()
+    {
+        auto* aw = new juce::AlertWindow ("Save Preset",
+                                          "Enter a name for this preset:",
+                                          juce::MessageBoxIconType::NoIcon);
+        aw->addTextEditor ("name", "My Preset");
+        aw->addButton ("Save",   1, juce::KeyPress (juce::KeyPress::returnKey));
+        aw->addButton ("Cancel", 0, juce::KeyPress (juce::KeyPress::escapeKey));
+        aw->enterModalState (true,
+            juce::ModalCallbackFunction::create ([this, aw](int result)
+            {
+                if (result == 1)
+                {
+                    const juce::String name = aw->getTextEditorContents ("name").trim();
+                    if (name.isNotEmpty())
+                        saveCurrentPreset (name);
+                }
+                delete aw;
+            }));
+    };
+    addAndMakeVisible (mPresetPrevBtn);
+    addAndMakeVisible (mPresetNextBtn);
+    addAndMakeVisible (mPresetSaveBtn);
+
+    setSize (kW, kH);
 }
 
 CurCrossbreedAudioProcessorEditor::~CurCrossbreedAudioProcessorEditor()
@@ -480,7 +587,7 @@ void CurCrossbreedAudioProcessorEditor::setupCombo (juce::ComboBox& box,
 //==============================================================================
 void CurCrossbreedAudioProcessorEditor::updateSlotPositions()
 {
-    for (int row = 0; row < 6; ++row)
+    for (int row = 0; row < 7; ++row)
     {
         const int moduleType = mVisualOrder[row];
         mSlots[moduleType]->setBounds (0, rowY (row), kW, kSlotH);
@@ -491,7 +598,6 @@ void CurCrossbreedAudioProcessorEditor::commitNewOrder (int fromRow, int toRow)
 {
     if (fromRow == toRow || fromRow < 0 || toRow < 0) return;
 
-    // Rotate entries between fromRow and toRow
     const int moduleBeingMoved = mVisualOrder[fromRow];
     if (toRow > fromRow)
         for (int i = fromRow; i < toRow; ++i) mVisualOrder[i] = mVisualOrder[i + 1];
@@ -501,8 +607,7 @@ void CurCrossbreedAudioProcessorEditor::commitNewOrder (int fromRow, int toRow)
 
     updateSlotPositions();
 
-    // Persist to APVTS (processor rebuilds mModuleOrder on next processBlock)
-    for (int row = 0; row < 6; ++row)
+    for (int row = 0; row < 7; ++row)
     {
         juce::String id ("slot"); id += row;
         if (auto* param = mProc.apvts.getParameter (id))
@@ -514,22 +619,18 @@ void CurCrossbreedAudioProcessorEditor::commitNewOrder (int fromRow, int toRow)
 //==============================================================================
 void CurCrossbreedAudioProcessorEditor::resized()
 {
-    // Header global controls
     const int kKnobSize = 44, kKnobY = 6, kLblY = 52, kLblH = 11;
     int x = kW - kMargin;
 
-    // Bypass button — far right
     x -= 70;
     mBypassBtn.setBounds (x, 28, 68, 26);
     x -= 12;
 
-    // Oversample combo
     x -= 110;
     mOversampleLabel.setBounds (x, 14, 110, 12);
     mOversampleBox.setBounds   (x, 28, 110, 22);
     x -= 12;
 
-    // Knobs from right: Mix, Out Gain, In Gain
     for (auto [knob, lbl] : std::initializer_list<std::pair<juce::Slider*, juce::Label*>>{
         { &mMixKnob, &mMixLabel },
         { &mOutputGainKnob, &mOutputGainLabel },
@@ -541,17 +642,22 @@ void CurCrossbreedAudioProcessorEditor::resized()
         x -= 12;
     }
 
+    mPresetLabel.setBounds   (350, 14, 272, 12);
+    mPresetPrevBtn.setBounds (350, 28,  22, 22);
+    mPresetBox.setBounds     (374, 28, 158, 22);
+    mPresetNextBtn.setBounds (534, 28,  22, 22);
+    mPresetSaveBtn.setBounds (564, 28,  58, 22);
+
     updateSlotPositions();
 }
 
 //==============================================================================
 void CurCrossbreedAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    const int W = getWidth(), H = getHeight();
+    const int W = getWidth();
 
     g.fillAll (colBg);
 
-    // Header background
     g.setColour (colHeader);
     g.fillRect (0, 0, W, kHeaderH);
     g.setColour (colAccent);
@@ -573,34 +679,31 @@ void CurCrossbreedAudioProcessorEditor::paint (juce::Graphics& g)
         }
     }
 
-    // Plugin title
     g.setColour (colText);
     g.setFont   (juce::Font (juce::FontOptions().withHeight (24.f).withStyle ("Bold")));
     g.drawText  ("CUR CROSSBREED", kMargin, 42, 320, 32, juce::Justification::centredLeft);
 
-    // Tagline
+    // Tagline + version
     g.setColour (colAccent.withAlpha (0.7f));
     g.setFont   (juce::Font (juce::FontOptions().withHeight (10.f)));
-    g.drawText  ("Rubblesonic  /  Multi-Effects Character Rack  /  VST3+AU",
-                 kMargin, 66, 500, 14, juce::Justification::centredLeft);
+    g.drawText  (juce::String ("Rubblesonic  /  Multi-Effects Character Rack  /  VST3+AU  /  v")
+                     + ProjectInfo::versionString,
+                 kMargin, 66, 360, 14, juce::Justification::centredLeft);
 
-    // Module rows background
-    for (int row = 0; row < 6; ++row)
+    // Module rows
+    for (int row = 0; row < 7; ++row)
     {
         const juce::Colour rowCol = (row % 2 == 0) ? colPanel : colPanelAlt;
         g.setColour (rowCol);
         g.fillRect  (0, rowY(row), W, kSlotH);
-        // Bottom separator
         g.setColour (colSepLine);
         g.fillRect  (0, rowY(row) + kSlotH - 1, W, 1);
-        // Row number
         g.setColour (colSubtext.withAlpha (0.5f));
         g.setFont   (juce::Font (juce::FontOptions().withHeight (9.f)));
         g.drawText  (juce::String (row + 1), W - 18, rowY(row) + 4, 14, 12,
                      juce::Justification::centred);
     }
 
-    // Drag overlay while dragging
     if (mIsDragging && mDragModule >= 0)
         paintDragOverlay (g);
 }
@@ -608,8 +711,7 @@ void CurCrossbreedAudioProcessorEditor::paint (juce::Graphics& g)
 //==============================================================================
 void CurCrossbreedAudioProcessorEditor::paintDragOverlay (juce::Graphics& g)
 {
-    // Show where the dragged slot will drop
-    const int targetRow = juce::jlimit (0, 5, rowAtY (mDragCurrentY));
+    const int targetRow = juce::jlimit (0, 6, rowAtY (mDragCurrentY));
     g.setColour (colAccent.withAlpha (0.35f));
     g.fillRect  (0, rowY (targetRow), kW, kSlotH);
     g.setColour (colAccent);
@@ -620,21 +722,19 @@ void CurCrossbreedAudioProcessorEditor::paintDragOverlay (juce::Graphics& g)
 //==============================================================================
 void CurCrossbreedAudioProcessorEditor::mouseDown (const juce::MouseEvent& e)
 {
-    // Check if click is on a drag handle of a slot component
-    for (int row = 0; row < 6; ++row)
+    for (int row = 0; row < 7; ++row)
     {
         const int moduleType = mVisualOrder[row];
         if (!mSlots[moduleType]) continue;
         const auto slotBounds = mSlots[moduleType]->getBounds();
         if (!slotBounds.contains (e.position.toInt())) continue;
-        // Is it in the handle zone (left 22px of the slot)?
         const auto localPos = e.position.toInt() - slotBounds.getTopLeft();
         if (localPos.x < 22)
         {
             mDragModule   = moduleType;
             mDragStartRow = row;
             mDragCurrentY = e.position.toInt().y;
-            mIsDragging   = false; // will set true on first drag
+            mIsDragging   = false;
             return;
         }
     }
@@ -655,7 +755,7 @@ void CurCrossbreedAudioProcessorEditor::mouseUp (const juce::MouseEvent& e)
     if (mDragModule < 0) return;
     if (mIsDragging)
     {
-        const int targetRow = juce::jlimit (0, 5, rowAtY (mDragCurrentY));
+        const int targetRow = juce::jlimit (0, 6, rowAtY (mDragCurrentY));
         commitNewOrder (mDragStartRow, targetRow);
         repaint();
     }
@@ -664,7 +764,7 @@ void CurCrossbreedAudioProcessorEditor::mouseUp (const juce::MouseEvent& e)
 }
 
 //==============================================================================
-// CurCrossbreedLAF  (same visual language as TapeBoxLAF)
+// CurCrossbreedLAF
 //==============================================================================
 void CurCrossbreedAudioProcessorEditor::CurCrossbreedLAF::drawRotarySlider (
     juce::Graphics& g, int x, int y, int w, int h,
@@ -767,4 +867,98 @@ void CurCrossbreedAudioProcessorEditor::CurCrossbreedLAF::drawButtonText (
     g.setFont   (juce::Font (juce::FontOptions().withHeight (9.5f).withStyle ("Bold")));
     g.drawFittedText (btn.getButtonText(), btn.getLocalBounds(),
                       juce::Justification::centred, 1);
+}
+
+//==============================================================================
+// User preset support
+//==============================================================================
+juce::File CurCrossbreedAudioProcessorEditor::getUserPresetsDir() const
+{
+    return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
+               .getChildFile ("Application Support/Rubblesonic/CurCrossbreed/Presets");
+}
+
+void CurCrossbreedAudioProcessorEditor::reloadPresetList()
+{
+    const int currentId = mPresetBox.getSelectedId();
+    mPresetBox.clear (juce::dontSendNotification);
+
+    for (int i = 0; i < CurCrossbreedAudioProcessor::kNumPresets; ++i)
+        mPresetBox.addItem (CurCrossbreedAudioProcessor::kPresets[i].name, i + 1);
+
+    mUserPresetFiles.clear();
+    const juce::File dir = getUserPresetsDir();
+    if (dir.isDirectory())
+    {
+        juce::Array<juce::File> xmlFiles;
+        dir.findChildFiles (xmlFiles, juce::File::findFiles, false, "*.xml");
+        for (const auto& f : xmlFiles)
+            mUserPresetFiles.push_back (f);
+        std::sort (mUserPresetFiles.begin(), mUserPresetFiles.end(),
+                   [](const juce::File& a, const juce::File& b) {
+                       return a.getFileName().compareIgnoreCase (b.getFileName()) < 0;
+                   });
+
+        if (!mUserPresetFiles.empty())
+        {
+            mPresetBox.addSeparator();
+            for (int i = 0; i < (int)mUserPresetFiles.size(); ++i)
+                mPresetBox.addItem (mUserPresetFiles[(size_t)i].getFileNameWithoutExtension(),
+                                    CurCrossbreedAudioProcessor::kNumPresets + i + 1);
+        }
+    }
+
+    if (currentId > 0)
+        mPresetBox.setSelectedId (currentId, juce::dontSendNotification);
+}
+
+void CurCrossbreedAudioProcessorEditor::saveCurrentPreset (const juce::String& name)
+{
+    const juce::File dir = getUserPresetsDir();
+    dir.createDirectory();
+
+    const auto state = mProc.apvts.copyState();
+    std::unique_ptr<juce::XmlElement> xml (state.createXml());
+    if (xml)
+    {
+        const juce::File outFile = dir.getChildFile (name + ".xml");
+        outFile.replaceWithText (xml->toString ({}));
+        reloadPresetList();
+
+        for (int i = 0; i < (int)mUserPresetFiles.size(); ++i)
+        {
+            if (mUserPresetFiles[(size_t)i].getFileNameWithoutExtension() == name)
+            {
+                mPresetBox.setSelectedId (CurCrossbreedAudioProcessor::kNumPresets + i + 1,
+                                          juce::dontSendNotification);
+                break;
+            }
+        }
+    }
+}
+
+void CurCrossbreedAudioProcessorEditor::loadUserPreset (const juce::File& f)
+{
+    std::unique_ptr<juce::XmlElement> xml (juce::XmlDocument::parse (f));
+    if (xml)
+    {
+        const auto newState = juce::ValueTree::fromXml (*xml);
+        if (newState.isValid())
+        {
+            mProc.apvts.replaceState (newState);
+            resyncVisualOrder();
+        }
+    }
+}
+
+void CurCrossbreedAudioProcessorEditor::resyncVisualOrder()
+{
+    for (int i = 0; i < 7; ++i)
+    {
+        juce::String id ("slot"); id += i;
+        if (auto* param = mProc.apvts.getRawParameterValue (id))
+            mVisualOrder[(size_t)i] = juce::jlimit (0, 6, (int)std::round (param->load()));
+    }
+    updateSlotPositions();
+    repaint();
 }

@@ -10,7 +10,6 @@ struct GrindhouseModule
 {
     void prepare (double sr) noexcept;
     void reset   () noexcept;
-    // os: borrowed from main processor for the Stage-2 clip (may be nullptr = no OS)
     void processBlock (juce::AudioBuffer<float>& buf,
                        juce::dsp::Oversampling<float>* os,
                        float inputGainDB,   float bias,         float stage1Amount,
@@ -18,9 +17,9 @@ struct GrindhouseModule
                        float postTone,      float outputLevelDB, float blend) noexcept;
 private:
     double mSR        = 44100.0;
-    float  mTiltLPL   = 0, mTiltLPR   = 0;   // pre-clip tilt EQ
-    float  mPostLPL   = 0, mPostLPR   = 0;   // post-tone LP
-    float  mOpAmpLPL  = 0, mOpAmpLPR  = 0;   // OpAmp mode internal LP
+    float  mTiltLPL   = 0, mTiltLPR   = 0;
+    float  mPostLPL   = 0, mPostLPR   = 0;
+    float  mOpAmpLPL  = 0, mOpAmpLPR  = 0;
 };
 
 //==============================================================================
@@ -53,7 +52,6 @@ private:
 
 //==============================================================================
 // Module 3: Voodoo Vibe — LDR-based optical phaser / vibrato
-// DSP ported from Loesje2000/VoodooVibe (PluginProcessor.cpp)
 //==============================================================================
 struct VoodooVibeModule
 {
@@ -103,7 +101,7 @@ private:
     double mSR = 44100.0;
     std::vector<float> mDelBufL, mDelBufR;
     int   mDelWritePos = 0;
-    float mDrkL = 0, mDrkR = 0;   // per-repeat darkening LP state
+    float mDrkL = 0, mDrkR = 0;
 
     float readLin (const std::vector<float>& buf, int wPos, float delay) noexcept;
 };
@@ -119,7 +117,6 @@ struct StereoWidenerModule
                        float widthPct, float crossoverHz) noexcept;
 private:
     double mSR = 44100.0;
-    // Linkwitz-Riley 2nd-order: two cascaded one-pole LPs for mid and side
     float mMidLP1L  = 0, mMidLP1R  = 0, mMidLP2L  = 0, mMidLP2R  = 0;
     float mSideLP1L = 0, mSideLP1R = 0, mSideLP2L = 0, mSideLP2R = 0;
 };
@@ -131,7 +128,6 @@ struct ToneGateModule
 {
     void prepare (double sr) noexcept;
     void reset   () noexcept;
-    // eqLow..eqHigh: band gains in dB (±15), bands centred at ~80/400/1.5k/5k/12k Hz
     void processBlock (juce::AudioBuffer<float>& buf,
                        float eqLow,  float eqLoMid, float eqMid,
                        float eqHiMid, float eqHigh,
@@ -139,15 +135,66 @@ struct ToneGateModule
                        int sidechainFilter, bool gateBypass) noexcept;
 private:
     double mSR = 44100.0;
-    // Five one-pole LP integrators (crossover frequencies: 80/400/1500/5000/12000 Hz)
     float mLp0L = 0, mLp0R = 0;
     float mLp1L = 0, mLp1R = 0;
     float mLp2L = 0, mLp2R = 0;
     float mLp3L = 0, mLp3R = 0;
     float mLp4L = 0, mLp4R = 0;
-    // Gate
     float mGateGain = 1.0f;
     float mScFltL = 0, mScFltR = 0;
+};
+
+//==============================================================================
+// Module 7: Transient Designer — differential-envelope attack/sustain shaper
+//==============================================================================
+struct TransientDesignerModule
+{
+    void prepare (double sr) noexcept;
+    void reset   () noexcept;
+    void processBlock (juce::AudioBuffer<float>& buf,
+                       float attackDB, float sustainDB,
+                       int speed, float mix) noexcept;
+private:
+    double mSR = 44100.0;
+    struct Chan { float fastEnv = 0.f; float slowEnv = 0.f; };
+    Chan mChan[2];
+};
+
+//==============================================================================
+// Presets
+//==============================================================================
+struct CurCrossbreedPreset
+{
+    const char* name;
+    int   order[7];
+    // Rack
+    float rackIn, rackOut, rackMix;
+    // Grindhouse
+    bool  ghByp;
+    float ghIn, ghBias, ghSt1, ghDrv, ghTlt, ghTon, ghOut, ghBld;
+    int   ghClip;
+    // TapeBox-lite
+    bool  tblByp;
+    int   tblType;
+    float tblWow, tblSat, tblTon, tblMix;
+    // Voodoo Vibe
+    bool  vvByp;
+    float vvSpd, vvInt, vvDrv, vvLmp, vvWid, vvMix;
+    int   vvMod;
+    // Memorec-lite
+    bool  mrlByp;
+    float mrlTim, mrlFbk, mrlTon, mrlMix;
+    // Stereo Widener
+    bool  swByp;
+    float swWid, swXov;
+    // Tone & Gate
+    bool  tgByp, tgGByp;
+    float tgLo, tgLM, tgMd, tgHM, tgHi, tgThr, tgRel;
+    int   tgSC;
+    // Transient Designer
+    bool  tdByp;
+    float tdAtk, tdSus, tdMix;
+    int   tdSpd;
 };
 
 //==============================================================================
@@ -179,15 +226,14 @@ public:
     void changeProgramName (int, const juce::String&) override {}
 
     void getStateInformation (juce::MemoryBlock& destData) override;
-    void setStateInformation (const void* data, int sizeInBytes) override;
+    void setStateInformation (const void*, int) override;
 
     void parameterChanged (const juce::String& paramID, float newValue) override;
 
     juce::AudioProcessorValueTreeState apvts;
 
-    // Processing order: mModuleOrder[slotIndex] = moduleIndex (0..5)
-    // Slot 0 runs first. Default: sequential 0..5.
-    std::array<int, 6> mModuleOrder { 0, 1, 2, 3, 4, 5 };
+    // Processing order: mModuleOrder[slotIndex] = moduleIndex (0..6)
+    std::array<int, 7> mModuleOrder { 0, 1, 2, 3, 4, 5, 6 };
 
     // UI-facing string arrays
     static const juce::StringArray kOversampleChoices;
@@ -195,46 +241,43 @@ public:
     static const juce::StringArray kTblTapeTypeChoices;
     static const juce::StringArray kVvModeChoices;
     static const juce::StringArray kTgSidechainChoices;
+    static const juce::StringArray kTdSpeedChoices;
+
+    // Presets
+    static constexpr int kNumPresets = 12;
+    static const CurCrossbreedPreset kPresets[kNumPresets];
+    void loadPreset (int index);
+    int  currentPreset = 0;
 
 private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
 
-    //==========================================================================
-    // Oversampling — 4 objects (TapeBox pattern).
-    // Active object is passed to saturation modules (Grindhouse, TapeBoxLite).
-    //==========================================================================
     std::unique_ptr<juce::dsp::Oversampling<float>> mOS1x, mOS2x, mOS4x, mOS8x;
     juce::dsp::Oversampling<float>* getActiveOS() noexcept;
     int  mCurrentOSIndex = 0;
     void rebuildOS (int blockSize);
 
-    //==========================================================================
-    // Module instances — all 6 permanently allocated; mModuleOrder controls routing
-    //==========================================================================
-    GrindhouseModule    mGrindhouse;
-    TapeBoxLiteModule   mTapeBoxLite;
-    VoodooVibeModule    mVoodooVibe;
-    MemoreclLiteModule  mMemorecLite;
-    StereoWidenerModule mStereoWidener;
-    ToneGateModule      mToneGate;
+    GrindhouseModule      mGrindhouse;
+    TapeBoxLiteModule     mTapeBoxLite;
+    VoodooVibeModule      mVoodooVibe;
+    MemoreclLiteModule    mMemorecLite;
+    StereoWidenerModule   mStereoWidener;
+    ToneGateModule        mToneGate;
+    TransientDesignerModule mTransientDesigner;
 
     double mSampleRate = 44100.0;
     int    mBlockSize  = 512;
     std::atomic<bool> mOrderDirty { false };
 
-    //==========================================================================
-    // Cached parameters (atomic for audio-thread safety)
-    //==========================================================================
-    // Rack globals
+    // Cached parameters
     std::atomic<float> mRackInputGain  { 0.f };
     std::atomic<float> mRackOutputGain { 0.f };
     std::atomic<float> mRackMix        { 1.f };
     std::atomic<float> mRackBypass     { 0.f };
     std::atomic<float> mOSIndex        { 0.f };
-    // Slot order (float 0..5, round to int)
     std::atomic<float> mSlot0 { 0.f }, mSlot1 { 1.f }, mSlot2 { 2.f };
     std::atomic<float> mSlot3 { 3.f }, mSlot4 { 4.f }, mSlot5 { 5.f };
-    // Grindhouse
+    std::atomic<float> mSlot6 { 6.f };
     std::atomic<float> mGhInputGain   { 0.f };
     std::atomic<float> mGhBias        { 0.f };
     std::atomic<float> mGhStage1Amt   { 0.5f };
@@ -245,14 +288,12 @@ private:
     std::atomic<float> mGhOutputLevel { 0.f };
     std::atomic<float> mGhBlend       { 1.f };
     std::atomic<float> mGhBypass      { 0.f };
-    // TapeBox-lite
     std::atomic<float> mTblTapeType   { 0.f };
     std::atomic<float> mTblWowFlutter { 0.25f };
     std::atomic<float> mTblSaturation { 0.4f };
     std::atomic<float> mTblTone       { 0.5f };
     std::atomic<float> mTblMix        { 1.f };
     std::atomic<float> mTblBypass     { 0.f };
-    // Voodoo Vibe
     std::atomic<float> mVvBypass      { 0.f };
     std::atomic<float> mVvSpeed       { 3.f };
     std::atomic<float> mVvIntensity   { 0.7f };
@@ -261,17 +302,14 @@ private:
     std::atomic<float> mVvStereoWidth { 0.35f };
     std::atomic<float> mVvMode        { 0.f };
     std::atomic<float> mVvMix         { 0.5f };
-    // Memorec-lite
     std::atomic<float> mMrlTime       { 250.f };
     std::atomic<float> mMrlFeedback   { 0.35f };
     std::atomic<float> mMrlTone       { 0.5f };
     std::atomic<float> mMrlMix        { 0.3f };
     std::atomic<float> mMrlBypass     { 0.f };
-    // Stereo Widener
     std::atomic<float> mSwWidth       { 100.f };
     std::atomic<float> mSwCrossover   { 500.f };
     std::atomic<float> mSwBypass      { 0.f };
-    // Tone & Gate
     std::atomic<float> mTgEqLow       { 0.f };
     std::atomic<float> mTgEqLoMid     { 0.f };
     std::atomic<float> mTgEqMid       { 0.f };
@@ -282,6 +320,11 @@ private:
     std::atomic<float> mTgSidechainFlt{ 0.f };
     std::atomic<float> mTgGateBypass  { 0.f };
     std::atomic<float> mTgBypass      { 0.f };
+    std::atomic<float> mTdBypass      { 0.f };
+    std::atomic<float> mTdAttack      { 0.f };
+    std::atomic<float> mTdSustain     { 0.f };
+    std::atomic<float> mTdSpeed       { 1.f };
+    std::atomic<float> mTdMix         { 1.f };
 
     void resetAllState();
     void dispatchModule (int moduleIdx, juce::AudioBuffer<float>& buf);

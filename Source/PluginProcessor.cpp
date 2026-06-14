@@ -12,6 +12,237 @@ const juce::StringArray CurCrossbreedAudioProcessor::kVvModeChoices
     { "Chorus", "Vibrato" };
 const juce::StringArray CurCrossbreedAudioProcessor::kTgSidechainChoices
     { "None", "HP 100Hz", "HP 500Hz", "LP 2kHz", "LP 5kHz" };
+const juce::StringArray CurCrossbreedAudioProcessor::kTdSpeedChoices
+    { "Fast", "Medium", "Slow" };
+
+//==============================================================================
+// Preset table
+//==============================================================================
+//  order[7]: visual slot order for all 7 modules (6 = Transient Designer)
+//  TD fields: bypass | attack sustain mix | speed (0=Fast 1=Med 2=Slow)
+
+const CurCrossbreedPreset
+CurCrossbreedAudioProcessor::kPresets[CurCrossbreedAudioProcessor::kNumPresets] =
+{
+    // ── 1. Init ──────────────────────────────────────────────────────────────
+    { "Init",
+      {0,1,2,3,4,5,6},  0.f, 0.f, 1.f,
+      false,  0.f,  0.f,   0.5f, 0.5f, 0.f,   0.5f,  0.f, 1.f,  0,
+      false,  0,    0.25f, 0.4f, 0.5f, 1.f,
+      false,  3.f,  0.7f,  0.3f, 0.5f, 0.35f, 0.5f,  0,
+      false,  250.f, 0.35f, 0.5f, 0.3f,
+      false,  100.f, 500.f,
+      false, true,  0.f, 0.f, 0.f, 0.f, 0.f,  -40.f, 100.f, 0,
+      true,   0.f, 0.f, 1.f, 1 },
+
+    // ── 2. Roadworn Cassette ─────────────────────────────────────────────────
+    { "Roadworn Cassette",
+      {1,3,5,4,6,0,2},  0.f, 0.f, 1.f,
+      true,   0.f,  0.f,   0.5f, 0.5f, 0.f,   0.5f,  0.f, 1.f,  0,
+      false,  1,    0.68f, 0.72f,0.3f, 1.f,
+      true,   3.f,  0.7f,  0.3f, 0.5f, 0.35f, 0.5f,  0,
+      false,  175.f, 0.55f, 0.28f,0.42f,
+      true,   100.f, 500.f,
+      false, true,  2.f, 1.f, 0.f,-3.f,-6.f,  -40.f, 100.f, 0,
+      true,   0.f, 0.f, 1.f, 1 },
+
+    // ── 3. Guitar DI ─────────────────────────────────────────────────────────
+    // Transient Designer adds punch: +6dB attack, -3dB sustain, medium speed
+    { "Guitar DI",
+      {6,0,5,4,1,2,3},  0.f, 0.f, 1.f,
+      false,  3.f,  0.12f, 0.72f,0.68f,0.2f,  0.62f,-2.f, 1.f,  1,
+      true,   0,    0.25f, 0.4f, 0.5f, 1.f,
+      true,   3.f,  0.7f,  0.3f, 0.5f, 0.35f, 0.5f,  0,
+      true,   250.f, 0.35f, 0.5f, 0.3f,
+      false,  115.f, 400.f,
+      false, true, -2.f,-1.f, 0.f, 1.5f, 2.f, -40.f, 100.f, 0,
+      false,  6.f, -3.f, 0.9f, 1 },
+
+    // ── 4. Optical Drift ─────────────────────────────────────────────────────
+    { "Optical Drift",
+      {1,2,4,5,0,3,6},  0.f, 0.f, 1.f,
+      true,   0.f,  0.f,   0.5f, 0.5f, 0.f,   0.5f,  0.f, 1.f,  0,
+      false,  0,    0.3f,  0.45f,0.52f,0.65f,
+      false,  1.8f, 0.82f, 0.28f,0.46f,0.68f,  0.7f,  0,
+      true,   250.f, 0.35f, 0.5f, 0.3f,
+      false,  120.f, 450.f,
+      false, true,  0.f, 0.f, 0.f, 0.f, 0.f,  -40.f, 100.f, 0,
+      true,   0.f, 0.f, 1.f, 1 },
+
+    // ── 5. Gated Studio ──────────────────────────────────────────────────────
+    // Transient Designer up front: +8dB attack, -6dB sustain (tight and punchy)
+    { "Gated Studio",
+      {6,0,5,4,1,2,3},  0.f,-1.f, 1.f,
+      false,  2.f,  0.f,   0.42f,0.38f,0.f,   0.55f,-2.f, 1.f,  1,
+      true,   0,    0.25f, 0.4f, 0.5f, 1.f,
+      true,   3.f,  0.7f,  0.3f, 0.5f, 0.35f, 0.5f,  0,
+      true,   250.f, 0.35f, 0.5f, 0.3f,
+      false,  125.f, 350.f,
+      false,false, -3.f, 0.f, 1.f, 2.f, 0.f,  -20.f,  75.f, 1,
+      false,  8.f, -6.f, 1.f, 0 },
+
+    // ── 6. Wide Tape Room ────────────────────────────────────────────────────
+    { "Wide Tape Room",
+      {1,4,5,0,2,3,6},  0.f, 0.f, 1.f,
+      true,   0.f,  0.f,   0.5f, 0.5f, 0.f,   0.5f,  0.f, 1.f,  0,
+      false,  0,    0.35f, 0.52f,0.48f,0.85f,
+      true,   3.f,  0.7f,  0.3f, 0.5f, 0.35f, 0.5f,  0,
+      true,   250.f, 0.35f, 0.5f, 0.3f,
+      false,  145.f, 380.f,
+      false, true,  0.f,-1.f, 0.f, 0.f, 1.f,  -40.f, 100.f, 0,
+      true,   0.f, 0.f, 1.f, 1 },
+
+    // ── 7. BBD Echo ──────────────────────────────────────────────────────────
+    { "BBD Echo",
+      {1,3,4,5,0,2,6},  0.f, 0.f, 1.f,
+      true,   0.f,  0.f,   0.5f, 0.5f, 0.f,   0.5f,  0.f, 1.f,  0,
+      false,  0,    0.4f,  0.55f,0.42f,1.f,
+      true,   3.f,  0.7f,  0.3f, 0.5f, 0.35f, 0.5f,  0,
+      false,  380.f, 0.58f, 0.32f,0.5f,
+      false,  110.f, 500.f,
+      false, true,  0.f, 0.f, 0.f, 0.f, 0.f,  -40.f, 100.f, 0,
+      true,   0.f, 0.f, 1.f, 1 },
+
+    // ── 8. Full Chain ────────────────────────────────────────────────────────
+    { "Full Chain",
+      {6,0,1,2,3,4,5},  0.f,-1.f, 1.f,
+      false,  2.f,  0.08f, 0.55f,0.45f,0.15f, 0.58f,-2.f, 1.f,  1,
+      false,  0,    0.28f, 0.45f,0.5f, 0.75f,
+      false,  2.5f, 0.62f, 0.22f,0.5f, 0.52f,  0.52f, 0,
+      false,  300.f, 0.38f, 0.45f,0.32f,
+      false,  118.f, 420.f,
+      false, true, -1.f, 0.f, 0.f, 0.5f, 1.f,  -40.f, 100.f, 0,
+      false,  4.f, -2.f, 0.8f, 1 },
+
+    // ── 9. Lo-Fi Bedroom ─────────────────────────────────────────────────────
+    { "Lo-Fi Bedroom",
+      {1,5,4,6,0,2,3},  0.f,-1.f, 1.f,
+      true,   0.f,  0.f,   0.5f, 0.5f, 0.f,   0.5f,  0.f, 1.f,  0,
+      false,  1,    0.82f, 0.75f,0.22f,1.f,
+      true,   3.f,  0.7f,  0.3f, 0.5f, 0.35f, 0.5f,  0,
+      true,   250.f, 0.35f, 0.5f, 0.3f,
+      false,  122.f, 380.f,
+      false, true,  2.f, 0.f, 0.f, 0.f,-3.f,  -40.f, 100.f, 0,
+      true,   0.f, 0.f, 1.f, 1 },
+
+    // ── 10. Drive & Gate ─────────────────────────────────────────────────────
+    { "Drive & Gate",
+      {6,0,5,4,1,2,3},  0.f,-2.f, 1.f,
+      false,  4.f,  0.f,   0.68f,0.82f,0.f,   0.42f,-3.f, 1.f,  2,
+      true,   0,    0.25f, 0.4f, 0.5f, 1.f,
+      true,   3.f,  0.7f,  0.3f, 0.5f, 0.35f, 0.5f,  0,
+      true,   250.f, 0.35f, 0.5f, 0.3f,
+      false,  110.f, 500.f,
+      false,false, -2.f, 0.f,-2.f, 1.f, 0.f,  -18.f,  45.f, 1,
+      false,  8.f, -6.f, 1.f, 0 },
+
+    // ── 11. Lush Chorus ──────────────────────────────────────────────────────
+    { "Lush Chorus",
+      {1,2,4,5,0,3,6},  0.f, 0.f, 1.f,
+      true,   0.f,  0.f,   0.5f, 0.5f, 0.f,   0.5f,  0.f, 1.f,  0,
+      false,  0,    0.22f, 0.38f,0.55f,0.7f,
+      false,  1.2f, 0.88f, 0.25f,0.48f,0.78f,  0.82f, 0,
+      true,   250.f, 0.35f, 0.5f, 0.3f,
+      false,  145.f, 280.f,
+      false, true,  0.f, 0.f, 0.f, 0.f, 1.5f,  -40.f, 100.f, 0,
+      true,   0.f, 0.f, 1.f, 1 },
+
+    // ── 12. Tape Crunch ──────────────────────────────────────────────────────
+    { "Tape Crunch",
+      {6,1,0,5,4,2,3},  0.f,-1.f, 1.f,
+      false,  2.f,  0.15f, 0.58f,0.52f,0.1f,   0.45f,-1.f, 0.75f,0,
+      false,  2,    0.32f, 0.88f,0.28f,0.9f,
+      true,   3.f,  0.7f,  0.3f, 0.5f, 0.35f, 0.5f,  0,
+      true,   250.f, 0.35f, 0.5f, 0.3f,
+      false,  105.f, 450.f,
+      false, true,  1.f, 0.f, 0.f, 0.f,-1.f,  -40.f, 100.f, 0,
+      false,  3.f, -1.f, 0.85f, 1 },
+};
+
+//==============================================================================
+void CurCrossbreedAudioProcessor::loadPreset (int index)
+{
+    if (index < 0 || index >= kNumPresets) return;
+    const auto& p = kPresets[index];
+
+    auto setF = [this](const char* id, float v) {
+        if (auto* param = apvts.getParameter (id))
+            param->setValueNotifyingHost (param->convertTo0to1 (v));
+    };
+    auto setI = [this](const char* id, int v) {
+        if (auto* param = apvts.getParameter (id))
+            param->setValueNotifyingHost (param->convertTo0to1 ((float)v));
+    };
+    auto setB = [this](const char* id, bool v) {
+        if (auto* param = apvts.getParameter (id))
+            param->setValueNotifyingHost (v ? 1.f : 0.f);
+    };
+
+    setF ("rack_inputGain",  p.rackIn);
+    setF ("rack_outputGain", p.rackOut);
+    setF ("rack_mix",        p.rackMix);
+
+    for (int i = 0; i < 7; ++i) {
+        juce::String id ("slot"); id += i;
+        setF (id.toRawUTF8(), (float)p.order[i]);
+    }
+
+    setB ("gh_bypass",      p.ghByp);
+    setF ("gh_inputGain",   p.ghIn);
+    setF ("gh_bias",        p.ghBias);
+    setF ("gh_stage1Amt",   p.ghSt1);
+    setI ("gh_clipType",    p.ghClip);
+    setF ("gh_stage2Drive", p.ghDrv);
+    setF ("gh_preTilt",     p.ghTlt);
+    setF ("gh_postTone",    p.ghTon);
+    setF ("gh_outputLevel", p.ghOut);
+    setF ("gh_blend",       p.ghBld);
+
+    setB ("tbl_bypass",     p.tblByp);
+    setI ("tbl_tapeType",   p.tblType);
+    setF ("tbl_wowFlutter", p.tblWow);
+    setF ("tbl_saturation", p.tblSat);
+    setF ("tbl_tone",       p.tblTon);
+    setF ("tbl_mix",        p.tblMix);
+
+    setB ("vv_bypass",      p.vvByp);
+    setF ("vv_speed",       p.vvSpd);
+    setF ("vv_intensity",   p.vvInt);
+    setF ("vv_drive",       p.vvDrv);
+    setF ("vv_lampBias",    p.vvLmp);
+    setF ("vv_stereoWidth", p.vvWid);
+    setF ("vv_mix",         p.vvMix);
+    setI ("vv_mode",        p.vvMod);
+
+    setB ("mrl_bypass",    p.mrlByp);
+    setF ("mrl_time",      p.mrlTim);
+    setF ("mrl_feedback",  p.mrlFbk);
+    setF ("mrl_tone",      p.mrlTon);
+    setF ("mrl_mix",       p.mrlMix);
+
+    setB ("sw_bypass",    p.swByp);
+    setF ("sw_width",     p.swWid);
+    setF ("sw_crossover", p.swXov);
+
+    setB ("tg_bypass",           p.tgByp);
+    setB ("tg_gateBypass",       p.tgGByp);
+    setF ("tg_eqLow",            p.tgLo);
+    setF ("tg_eqLoMid",          p.tgLM);
+    setF ("tg_eqMid",            p.tgMd);
+    setF ("tg_eqHiMid",          p.tgHM);
+    setF ("tg_eqHigh",           p.tgHi);
+    setF ("tg_gateThresh",       p.tgThr);
+    setF ("tg_gateRelease",      p.tgRel);
+    setI ("tg_sidechainFilter",  p.tgSC);
+
+    setB ("td_bypass",   p.tdByp);
+    setF ("td_attack",   p.tdAtk);
+    setF ("td_sustain",  p.tdSus);
+    setF ("td_mix",      p.tdMix);
+    setI ("td_speed",    p.tdSpd);
+
+    currentPreset = index;
+}
 
 //==============================================================================
 // GrindhouseModule
@@ -37,13 +268,10 @@ void GrindhouseModule::processBlock (juce::AudioBuffer<float>& buf,
     const float inGainLin  = juce::Decibels::decibelsToGain (inputGainDB);
     const float outLevelLin = juce::Decibels::decibelsToGain (outputLevelDB);
 
-    // Tilt EQ one-pole LP at 1 kHz pivot
     const float tiltC = (pi2 * 1000.f / sr) / (1.f + pi2 * 1000.f / sr);
-    // Post-tone LP: maps 0→1 to 2 kHz..12 kHz
     const float postCutHz = 2000.f + postTone * 10000.f;
     const float postC     = (pi2 * postCutHz / sr) / (1.f + pi2 * postCutHz / sr);
 
-    // Store dry
     juce::AudioBuffer<float> dry (numCh, N);
     for (int ch = 0; ch < numCh; ++ch)
         dry.copyFrom (ch, 0, buf, ch, 0, N);
@@ -51,23 +279,22 @@ void GrindhouseModule::processBlock (juce::AudioBuffer<float>& buf,
     auto* L = buf.getWritePointer (0);
     auto* R = (numCh > 1) ? buf.getWritePointer (1) : L;
 
-    //---  Stage 1: tilt EQ + tube pre-clip (no oversampling needed)  -----------
     for (int i = 0; i < N; ++i)
     {
         float xL = L[i] * inGainLin;
         float xR = (numCh > 1 ? R[i] : L[i]) * inGainLin;
 
-        // Tilt EQ: preTilt > 0 brightens (adds HP), < 0 darkens (subtracts HP)
         mTiltLPL += tiltC * (xL - mTiltLPL);
         mTiltLPR += tiltC * (xR - mTiltLPR);
         xL = xL + preTilt * (xL - mTiltLPL) * 0.5f;
         xR = xR + preTilt * (xR - mTiltLPR) * 0.5f;
 
-        // Stage 1: asymmetric tanh pre-clip, blended with clean
+        // DC subtraction keeps asymmetry without leaking offset into Stage 2
         const float biasOff = bias * 0.3f;
         const float s1drive = 1.f + stage1Amount * 4.f;
-        float s1L = std::tanh ((xL + biasOff) * s1drive);
-        float s1R = std::tanh ((xR + biasOff) * s1drive);
+        const float biasDC  = std::tanh (biasOff * s1drive);
+        float s1L = std::tanh ((xL + biasOff) * s1drive) - biasDC;
+        float s1R = std::tanh ((xR + biasOff) * s1drive) - biasDC;
         xL = xL * (1.f - stage1Amount) + s1L * stage1Amount;
         xR = xR * (1.f - stage1Amount) + s1R * stage1Amount;
 
@@ -75,16 +302,15 @@ void GrindhouseModule::processBlock (juce::AudioBuffer<float>& buf,
         if (numCh > 1) R[i] = xR;
     }
 
-    //--- Stage 2: selectable clip topology — oversampled if os != nullptr ------
     {
         auto doClip = [&](float x, float opAmpLP, float& opAmpLPState, float osSR) -> float
         {
-            if (clipType == 0) // Diode
+            if (clipType == 0)
             {
                 const float k = 1.f + stage2Drive * 7.f;
                 return x / (1.f + k * std::abs (x));
             }
-            else if (clipType == 1) // Transistor (asymmetric)
+            else if (clipType == 1)
             {
                 const float kPos = 1.f + stage2Drive * 7.f;
                 const float kNeg = 1.f + stage2Drive * 5.f;
@@ -92,7 +318,7 @@ void GrindhouseModule::processBlock (juce::AudioBuffer<float>& buf,
                                       : x / (1.f - kNeg * x);
                 return c + 0.05f * stage2Drive * c * c * (x >= 0.f ? 1.f : -1.f);
             }
-            else // OpAmp Hard Clip (one-pole LP + hard limiter)
+            else
             {
                 const float cutHz  = 8000.f - stage2Drive * 3000.f;
                 const float alphaO = (pi2 * cutHz / osSR) / (1.f + pi2 * cutHz / osSR);
@@ -129,7 +355,6 @@ void GrindhouseModule::processBlock (juce::AudioBuffer<float>& buf,
         }
     }
 
-    //--- Post-stage: LP, output level, blend  ----------------------------------
     const float* dL = dry.getReadPointer (0);
     const float* dR = (numCh > 1) ? dry.getReadPointer (1) : dL;
     for (int i = 0; i < N; ++i)
@@ -208,23 +433,19 @@ void TapeBoxLiteModule::processBlock (juce::AudioBuffer<float>& buf,
     const float dt  = 1.f / sr;
     const float pi2 = juce::MathConstants<float>::twoPi;
 
-    // Tape EQ: gentle bass boost + presence
     const float eqBassC = (pi2 * 50.f   / sr) / (1.f + pi2 * 50.f   / sr);
     const float eqPresC = (pi2 * 2200.f / sr) / (1.f + pi2 * 2200.f / sr);
     const float eqBassAmt = 0.08f;
     const float eqPresAmt = 0.04f;
 
-    // Tone LP: maps 0→1 to 1500 Hz .. 18000 Hz
     const float toneCutHz = 1500.f + tone * 16500.f;
     const float toneC     = (pi2 * toneCutHz / sr) / (1.f + pi2 * toneCutHz / sr);
 
-    // Wow & Flutter rates + depths (simplified from TapeBox: single combined wowFlutter param)
     const float wowDepth1  = sr * 0.002f  * wowFlutter;
     const float wowDepth2  = sr * 0.0008f * wowFlutter;
     const float wowDepth3  = sr * 0.0012f * wowFlutter;
     const float flutDepth  = sr * 0.0008f * wowFlutter;
 
-    // Store dry for mix
     juce::AudioBuffer<float> dry (numCh, N);
     for (int ch = 0; ch < numCh; ++ch)
         dry.copyFrom (ch, 0, buf, ch, 0, N);
@@ -232,7 +453,6 @@ void TapeBoxLiteModule::processBlock (juce::AudioBuffer<float>& buf,
     auto* L = buf.getWritePointer (0);
     auto* R = (numCh > 1) ? buf.getWritePointer (1) : L;
 
-    // Tape EQ (pre-saturation)
     for (int i = 0; i < N; ++i)
     {
         float xL = L[i], xR = (numCh > 1) ? R[i] : L[i];
@@ -243,11 +463,8 @@ void TapeBoxLiteModule::processBlock (juce::AudioBuffer<float>& buf,
         L[i] = xL; if (numCh > 1) R[i] = xR;
     }
 
-    // Oversampled saturation
     {
-        const float driveAmt  = saturation;
-        const float inputGain = 1.f + driveAmt * 0.8f;
-
+        const float inputGain = 1.f + saturation * 0.8f;
         auto saturateSample = [&](float x) -> float {
             return tapeNL (x * inputGain, tapeType);
         };
@@ -275,17 +492,14 @@ void TapeBoxLiteModule::processBlock (juce::AudioBuffer<float>& buf,
         }
     }
 
-    // Post-saturation: tone LP, wow/flutter, DC block, mix
     juce::Random rng;
     for (int i = 0; i < N; ++i)
     {
         float xL = L[i], xR = (numCh > 1) ? R[i] : L[i];
 
-        // Tone LP (tape darkening)
         mToneLPL += toneC * (xL - mToneLPL);  xL = mToneLPL;
         mToneLPR += toneC * (xR - mToneLPR);  xR = mToneLPR;
 
-        // Wow & flutter delay
         mDelBufL[mDelWritePos] = xL;
         mDelBufR[mDelWritePos] = xR;
 
@@ -297,11 +511,12 @@ void TapeBoxLiteModule::processBlock (juce::AudioBuffer<float>& buf,
         if (mFlutP > 1.f) mFlutP -= 1.f;
         if (mFlutP2> 1.f) mFlutP2 -= 1.f;
 
-        const float wowMod = std::sin(pi2*mWowP) *wowDepth1
-                           + std::sin(pi2*mWowP2)*wowDepth2
-                           + std::sin(pi2*mWowP3)*wowDepth3;
+        const float pi2l = juce::MathConstants<float>::twoPi;
+        const float wowMod = std::sin(pi2l*mWowP) *wowDepth1
+                           + std::sin(pi2l*mWowP2)*wowDepth2
+                           + std::sin(pi2l*mWowP3)*wowDepth3;
         const float flutRnd = rng.nextFloat() * 0.15f;
-        const float flutMod = (std::sin(pi2*mFlutP) + 0.4f*std::sin(pi2*mFlutP2+1.1f)+flutRnd)
+        const float flutMod = (std::sin(pi2l*mFlutP) + 0.4f*std::sin(pi2l*mFlutP2+1.1f)+flutRnd)
                              * flutDepth;
         const float totalMod = 128.f + wowMod + flutMod;
 
@@ -309,7 +524,6 @@ void TapeBoxLiteModule::processBlock (juce::AudioBuffer<float>& buf,
         xR = readLin (mDelBufR, mDelWritePos, totalMod);
         mDelWritePos = (mDelWritePos + 1) % kWFBuf;
 
-        // DC block
         float dbL = xL - mDCBlkL;  mDCBlkL = xL - dbL * 0.999f;  xL = dbL;
         float dbR = xR - mDCBlkR;  mDCBlkR = xR - dbR * 0.999f;  xR = dbR;
 
@@ -321,7 +535,7 @@ void TapeBoxLiteModule::processBlock (juce::AudioBuffer<float>& buf,
 }
 
 //==============================================================================
-// VoodooVibeModule — LDR optical phaser/vibrato (ported from Loesje2000/VoodooVibe)
+// VoodooVibeModule
 //==============================================================================
 void VoodooVibeModule::prepare (double sr) noexcept
 {
@@ -353,7 +567,7 @@ void VoodooVibeModule::Channel::reset() noexcept
 float VoodooVibeModule::processPreamp (float x, float driveAmt) const noexcept
 {
     const float gain  = 1.f + driveAmt * 3.25f;
-    const float clip  = [](float v) -> float {  // soft clip
+    const float clip  = [](float v) -> float {
         if (v > 1.f)  return 1.f - 1.f / (1.f + (v - 1.f));
         if (v < -1.f) return -1.f + 1.f / (1.f - (v + 1.f));
         return v - v * v * v * (1.f / 3.f);
@@ -445,7 +659,6 @@ void VoodooVibeModule::processBlock (juce::AudioBuffer<float>& buf,
 void MemoreclLiteModule::prepare (double sr) noexcept
 {
     mSR = sr;
-    // Buffer for 800ms at up to 192kHz with margin
     const int bufSize = (int)(sr * 0.85);
     mDelBufL.assign (bufSize, 0.f);
     mDelBufR.assign (bufSize, 0.f);
@@ -484,7 +697,6 @@ void MemoreclLiteModule::processBlock (juce::AudioBuffer<float>& buf,
     timeMs = juce::jlimit (50.f, 800.f, timeMs);
     const float delaySamples = timeMs * 0.001f * sr;
 
-    // Per-repeat darkening LP cutoff: tone 0→1 maps 800Hz..10000Hz
     const float drkCutHz = 800.f + tone * 9200.f;
     const float drkC     = (pi2 * drkCutHz / sr) / (1.f + pi2 * drkCutHz / sr);
 
@@ -496,15 +708,12 @@ void MemoreclLiteModule::processBlock (juce::AudioBuffer<float>& buf,
         const float inL = L[i];
         const float inR = (numCh > 1) ? R[i] : L[i];
 
-        // Read delayed output
         float delL = readLin (mDelBufL, mDelWritePos, delaySamples);
         float delR = readLin (mDelBufR, mDelWritePos, delaySamples);
 
-        // Apply darkening to feedback path (BBD HF rolloff per repeat)
         mDrkL += drkC * (delL - mDrkL);
         mDrkR += drkC * (delR - mDrkR);
 
-        // Write to delay buffer: input + darkened feedback
         mDelBufL[mDelWritePos] = inL + mDrkL * feedback;
         mDelBufR[mDelWritePos] = inR + mDrkR * feedback;
         mDelWritePos = (mDelWritePos + 1) % bufSize;
@@ -531,8 +740,7 @@ void StereoWidenerModule::processBlock (juce::AudioBuffer<float>& buf,
     const int N    = buf.getNumSamples();
     const int numCh = buf.getNumChannels();
 
-    if (numCh < 2)
-        return; // widening meaningless on mono
+    if (numCh < 2) return;
 
     const float sr  = (float)mSR;
     const float pi2 = juce::MathConstants<float>::twoPi;
@@ -548,20 +756,16 @@ void StereoWidenerModule::processBlock (juce::AudioBuffer<float>& buf,
         const float mid  = (L[i] + R[i]) * 0.5f;
         const float side = (L[i] - R[i]) * 0.5f;
 
-        // Linkwitz-Riley 2nd-order LP (two one-pole stages) on mid and side
         mMidLP1L  += alpha * (mid  - mMidLP1L);
         mMidLP2L  += alpha * (mMidLP1L - mMidLP2L);
         mSideLP1L += alpha * (side - mSideLP1L);
         mSideLP2L += alpha * (mSideLP1L - mSideLP2L);
 
-        // Mid is identical for both channels so one filter chain suffices
-        // (Side also splits identically, just one chain needed)
-        const float lowMid  = mMidLP2L;
-        const float highMid = mid - lowMid;
+        const float lowMid   = mMidLP2L;
+        const float highMid  = mid - lowMid;
         const float lowSide  = mSideLP2L;
         const float highSide = side - lowSide;
 
-        // Scale only the high-band side
         const float newSide = lowSide + highSide * widthGain;
         const float newMid  = lowMid  + highMid;
 
@@ -571,7 +775,7 @@ void StereoWidenerModule::processBlock (juce::AudioBuffer<float>& buf,
 }
 
 //==============================================================================
-// ToneGateModule — 5-band proportional EQ + gate
+// ToneGateModule
 //==============================================================================
 void ToneGateModule::prepare (double sr) noexcept { mSR = sr; reset(); }
 void ToneGateModule::reset   () noexcept
@@ -594,7 +798,6 @@ void ToneGateModule::processBlock (juce::AudioBuffer<float>& buf,
     const float sr  = (float)mSR;
     const float pi2 = juce::MathConstants<float>::twoPi;
 
-    // 5-band LP crossover alphas: 80, 400, 1500, 5000, 12000 Hz
     auto alpha = [&](float fc) { const float w = pi2*fc/sr; return w/(1.f+w); };
     const float a0 = alpha (80.f);
     const float a1 = alpha (400.f);
@@ -602,17 +805,14 @@ void ToneGateModule::processBlock (juce::AudioBuffer<float>& buf,
     const float a3 = alpha (5000.f);
     const float a4 = alpha (12000.f);
 
-    // Band gains: dB → linear proportional factor (g-1 = 0 at unity)
     auto dg = [](float db) { return juce::Decibels::decibelsToGain(db) - 1.f; };
     const float g0 = dg(eqLow), g1 = dg(eqLoMid), g2 = dg(eqMid),
                 g3 = dg(eqHiMid), g4 = dg(eqHigh);
 
-    // Gate constants
     const float threshLin  = juce::Decibels::decibelsToGain (gateThreshDB);
     const float attackCoef = std::exp (-1.f / (0.001f * sr));
     const float relCoef    = std::exp (-1.f / (juce::jlimit(5.f,500.f,gateReleaseMs) * 0.001f * sr));
 
-    // Sidechain filter
     float scAlpha = 0.f;
     if (sidechainFilter > 0)
     {
@@ -629,20 +829,17 @@ void ToneGateModule::processBlock (juce::AudioBuffer<float>& buf,
     {
         float xL = L[i], xR = (numCh > 1) ? R[i] : L[i];
 
-        //--  5-band proportional EQ  ------------------------------------------
         mLp0L += a0*(xL-mLp0L);  mLp0R += a0*(xR-mLp0R);
         mLp1L += a1*(xL-mLp1L);  mLp1R += a1*(xR-mLp1R);
         mLp2L += a2*(xL-mLp2L);  mLp2R += a2*(xR-mLp2R);
         mLp3L += a3*(xL-mLp3L);  mLp3R += a3*(xR-mLp3R);
         mLp4L += a4*(xL-mLp4L);  mLp4R += a4*(xR-mLp4R);
 
-        // Bands: low shelf, 3 bells, high shelf
         xL += g0*mLp0L + g1*(mLp1L-mLp0L) + g2*(mLp2L-mLp1L)
             + g3*(mLp3L-mLp2L) + g4*(xL-mLp4L);
         xR += g0*mLp0R + g1*(mLp1R-mLp0R) + g2*(mLp2R-mLp1R)
             + g3*(mLp3R-mLp2R) + g4*(xR-mLp4R);
 
-        //--  Gate  -------------------------------------------------------------
         if (!gateBypass)
         {
             float scL = xL, scR = xR;
@@ -668,6 +865,67 @@ void ToneGateModule::processBlock (juce::AudioBuffer<float>& buf,
 }
 
 //==============================================================================
+// TransientDesignerModule
+//==============================================================================
+void TransientDesignerModule::prepare (double sr) noexcept { mSR = sr; reset(); }
+void TransientDesignerModule::reset () noexcept
+{
+    for (auto& ch : mChan) { ch.fastEnv = 0.f; ch.slowEnv = 0.f; }
+}
+
+void TransientDesignerModule::processBlock (juce::AudioBuffer<float>& buf,
+                                             float attackDB, float sustainDB,
+                                             int speed, float mix) noexcept
+{
+    juce::ScopedNoDenormals noDenormals;
+    const int N    = buf.getNumSamples();
+    const int numCh = buf.getNumChannels();
+    const float sr  = (float)mSR;
+
+    // Time constants: { fastAtt, fastRel, slowAtt, slowRel } in ms
+    float fastAttMs, fastRelMs, slowAttMs, slowRelMs;
+    if (speed == 0)      { fastAttMs = 0.3f;  fastRelMs = 10.f;  slowAttMs = 3.f;   slowRelMs = 100.f; }
+    else if (speed == 2) { fastAttMs = 3.f;   fastRelMs = 100.f; slowAttMs = 30.f;  slowRelMs = 1000.f; }
+    else                 { fastAttMs = 1.f;   fastRelMs = 30.f;  slowAttMs = 10.f;  slowRelMs = 300.f; }
+
+    auto coeff = [&](float ms) { return std::exp (-1000.f / (ms * sr)); };
+    const float fAtt = coeff (fastAttMs), fRel = coeff (fastRelMs);
+    const float sAtt = coeff (slowAttMs), sRel = coeff (slowRelMs);
+
+    const float attackLin  = juce::Decibels::decibelsToGain (attackDB);
+    const float sustainLin = juce::Decibels::decibelsToGain (sustainDB);
+
+    for (int ch = 0; ch < numCh && ch < 2; ++ch)
+    {
+        auto* data = buf.getWritePointer (ch);
+        auto& c = mChan[ch];
+
+        for (int i = 0; i < N; ++i)
+        {
+            const float level = std::abs (data[i]);
+
+            c.fastEnv = (level > c.fastEnv) ? fAtt * c.fastEnv + (1.f - fAtt) * level
+                                             : fRel * c.fastEnv + (1.f - fRel) * level;
+            c.slowEnv = (level > c.slowEnv) ? sAtt * c.slowEnv + (1.f - sAtt) * level
+                                             : sRel * c.slowEnv + (1.f - sRel) * level;
+
+            // transient = fast ahead of slow; sustain = the slow-moving body
+            const float transientAmt = juce::jmax (0.f, c.fastEnv - c.slowEnv);
+            const float sustainAmt   = c.slowEnv;
+            const float norm         = c.fastEnv + 1.0e-10f;
+            const float tN = juce::jmin (1.f, transientAmt / norm);
+            const float sN = juce::jmin (1.f, sustainAmt   / norm);
+
+            const float gain = juce::jmax (0.f, 1.f
+                + (attackLin  - 1.f) * tN
+                + (sustainLin - 1.f) * sN);
+
+            data[i] = data[i] * (1.f - mix) + data[i] * gain * mix;
+        }
+    }
+}
+
+//==============================================================================
 // CurCrossbreedAudioProcessor
 //==============================================================================
 CurCrossbreedAudioProcessor::CurCrossbreedAudioProcessor()
@@ -676,13 +934,12 @@ CurCrossbreedAudioProcessor::CurCrossbreedAudioProcessor()
                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
       apvts (*this, nullptr, "Parameters", createParameters())
 {
-    // Initialise slot atomics
     mSlot0 = 0.f; mSlot1 = 1.f; mSlot2 = 2.f;
-    mSlot3 = 3.f; mSlot4 = 4.f; mSlot5 = 5.f;
+    mSlot3 = 3.f; mSlot4 = 4.f; mSlot5 = 5.f; mSlot6 = 6.f;
 
     const juce::StringArray ids {
         "rack_inputGain", "rack_outputGain", "rack_mix", "rack_bypass", "rack_oversample",
-        "slot0","slot1","slot2","slot3","slot4","slot5",
+        "slot0","slot1","slot2","slot3","slot4","slot5","slot6",
         "gh_inputGain","gh_bias","gh_stage1Amt","gh_clipType","gh_stage2Drive",
         "gh_preTilt","gh_postTone","gh_outputLevel","gh_blend","gh_bypass",
         "tbl_tapeType","tbl_wowFlutter","tbl_saturation","tbl_tone","tbl_mix","tbl_bypass",
@@ -690,7 +947,8 @@ CurCrossbreedAudioProcessor::CurCrossbreedAudioProcessor()
         "mrl_time","mrl_feedback","mrl_tone","mrl_mix","mrl_bypass",
         "sw_width","sw_crossover","sw_bypass",
         "tg_eqLow","tg_eqLoMid","tg_eqMid","tg_eqHiMid","tg_eqHigh",
-        "tg_gateThresh","tg_gateRelease","tg_sidechainFilter","tg_gateBypass","tg_bypass"
+        "tg_gateThresh","tg_gateRelease","tg_sidechainFilter","tg_gateBypass","tg_bypass",
+        "td_bypass","td_attack","td_sustain","td_speed","td_mix"
     };
     for (auto& id : ids)
         apvts.addParameterListener (id, this);
@@ -700,7 +958,7 @@ CurCrossbreedAudioProcessor::~CurCrossbreedAudioProcessor()
 {
     const juce::StringArray ids {
         "rack_inputGain", "rack_outputGain", "rack_mix", "rack_bypass", "rack_oversample",
-        "slot0","slot1","slot2","slot3","slot4","slot5",
+        "slot0","slot1","slot2","slot3","slot4","slot5","slot6",
         "gh_inputGain","gh_bias","gh_stage1Amt","gh_clipType","gh_stage2Drive",
         "gh_preTilt","gh_postTone","gh_outputLevel","gh_blend","gh_bypass",
         "tbl_tapeType","tbl_wowFlutter","tbl_saturation","tbl_tone","tbl_mix","tbl_bypass",
@@ -708,7 +966,8 @@ CurCrossbreedAudioProcessor::~CurCrossbreedAudioProcessor()
         "mrl_time","mrl_feedback","mrl_tone","mrl_mix","mrl_bypass",
         "sw_width","sw_crossover","sw_bypass",
         "tg_eqLow","tg_eqLoMid","tg_eqMid","tg_eqHiMid","tg_eqHigh",
-        "tg_gateThresh","tg_gateRelease","tg_sidechainFilter","tg_gateBypass","tg_bypass"
+        "tg_gateThresh","tg_gateRelease","tg_sidechainFilter","tg_gateBypass","tg_bypass",
+        "td_bypass","td_attack","td_sustain","td_speed","td_mix"
     };
     for (auto& id : ids)
         apvts.removeParameterListener (id, this);
@@ -742,12 +1001,12 @@ CurCrossbreedAudioProcessor::createParameters()
     p.push_back (tog ("rack_bypass",     "Rack Bypass"));
     p.push_back (ch  ("rack_oversample", "Oversample", kOversampleChoices, 0));
 
-    // Slot order (float 0..5)
-    for (int s = 0; s < 6; ++s)
+    // Slot order — now 7 slots, values 0..6
+    for (int s = 0; s < 7; ++s)
     {
         juce::String id ("slot"); id += s;
         juce::String nm ("Slot "); nm += s;
-        p.push_back (flt (id.toRawUTF8(), nm.toRawUTF8(), 0.f, 5.f, 1.f, (float)s));
+        p.push_back (flt (id.toRawUTF8(), nm.toRawUTF8(), 0.f, 6.f, 1.f, (float)s));
     }
 
     // Grindhouse
@@ -807,6 +1066,13 @@ CurCrossbreedAudioProcessor::createParameters()
     p.push_back (tog ("tg_gateBypass",    "TG Gate Bypass"));
     p.push_back (tog ("tg_bypass",        "TG Bypass"));
 
+    // Transient Designer
+    p.push_back (tog ("td_bypass",  "TD Bypass"));
+    p.push_back (flt ("td_attack",  "TD Attack",  -12.f, 12.f, 0.1f, 0.f));
+    p.push_back (flt ("td_sustain", "TD Sustain", -12.f, 12.f, 0.1f, 0.f));
+    p.push_back (flt ("td_mix",     "TD Mix",       0.f,  1.f, 0.01f, 1.f));
+    p.push_back (ch  ("td_speed",   "TD Speed", kTdSpeedChoices, 1));
+
     return { p.begin(), p.end() };
 }
 
@@ -824,6 +1090,7 @@ void CurCrossbreedAudioProcessor::parameterChanged (const juce::String& id, floa
     else if (id == "slot3") { mSlot3 = v; mOrderDirty = true; }
     else if (id == "slot4") { mSlot4 = v; mOrderDirty = true; }
     else if (id == "slot5") { mSlot5 = v; mOrderDirty = true; }
+    else if (id == "slot6") { mSlot6 = v; mOrderDirty = true; }
     else if (id == "gh_inputGain")   mGhInputGain   = v;
     else if (id == "gh_bias")        mGhBias        = v;
     else if (id == "gh_stage1Amt")   mGhStage1Amt   = v;
@@ -866,6 +1133,11 @@ void CurCrossbreedAudioProcessor::parameterChanged (const juce::String& id, floa
     else if (id == "tg_sidechainFilter") mTgSidechainFlt = v;
     else if (id == "tg_gateBypass")  mTgGateBypass  = v;
     else if (id == "tg_bypass")      mTgBypass      = v;
+    else if (id == "td_bypass")      mTdBypass      = v;
+    else if (id == "td_attack")      mTdAttack      = v;
+    else if (id == "td_sustain")     mTdSustain     = v;
+    else if (id == "td_speed")       mTdSpeed       = v;
+    else if (id == "td_mix")         mTdMix         = v;
 }
 
 //==============================================================================
@@ -901,6 +1173,7 @@ void CurCrossbreedAudioProcessor::resetAllState()
     mMemorecLite.reset();
     mStereoWidener.reset();
     mToneGate.reset();
+    mTransientDesigner.reset();
 }
 
 void CurCrossbreedAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
@@ -908,12 +1181,13 @@ void CurCrossbreedAudioProcessor::prepareToPlay (double sampleRate, int samplesP
     mSampleRate = sampleRate;
     mBlockSize  = samplesPerBlock;
 
-    mGrindhouse.prepare    (sampleRate);
-    mTapeBoxLite.prepare   (sampleRate);
-    mVoodooVibe.prepare    (sampleRate);
-    mMemorecLite.prepare   (sampleRate);
-    mStereoWidener.prepare (sampleRate);
-    mToneGate.prepare      (sampleRate);
+    mGrindhouse.prepare         (sampleRate);
+    mTapeBoxLite.prepare        (sampleRate);
+    mVoodooVibe.prepare         (sampleRate);
+    mMemorecLite.prepare        (sampleRate);
+    mStereoWidener.prepare      (sampleRate);
+    mToneGate.prepare           (sampleRate);
+    mTransientDesigner.prepare  (sampleRate);
 
     rebuildOS (samplesPerBlock);
     mCurrentOSIndex = (int)mOSIndex.load();
@@ -928,6 +1202,7 @@ void CurCrossbreedAudioProcessor::prepareToPlay (double sampleRate, int samplesP
     sync("rack_oversample", mOSIndex);
     sync("slot0", mSlot0); sync("slot1", mSlot1); sync("slot2", mSlot2);
     sync("slot3", mSlot3); sync("slot4", mSlot4); sync("slot5", mSlot5);
+    sync("slot6", mSlot6);
     sync("gh_inputGain",   mGhInputGain);
     sync("gh_bias",        mGhBias);
     sync("gh_stage1Amt",   mGhStage1Amt);
@@ -970,14 +1245,18 @@ void CurCrossbreedAudioProcessor::prepareToPlay (double sampleRate, int samplesP
     sync("tg_sidechainFilter", mTgSidechainFlt);
     sync("tg_gateBypass",  mTgGateBypass);
     sync("tg_bypass",      mTgBypass);
+    sync("td_bypass",      mTdBypass);
+    sync("td_attack",      mTdAttack);
+    sync("td_sustain",     mTdSustain);
+    sync("td_speed",       mTdSpeed);
+    sync("td_mix",         mTdMix);
 
-    // Rebuild order from slot params
-    mModuleOrder[0] = (int)std::round(mSlot0.load());
-    mModuleOrder[1] = (int)std::round(mSlot1.load());
-    mModuleOrder[2] = (int)std::round(mSlot2.load());
-    mModuleOrder[3] = (int)std::round(mSlot3.load());
-    mModuleOrder[4] = (int)std::round(mSlot4.load());
-    mModuleOrder[5] = (int)std::round(mSlot5.load());
+    for (int i = 0; i < 7; ++i)
+    {
+        juce::String id ("slot"); id += i;
+        if (auto* param = apvts.getRawParameterValue (id))
+            mModuleOrder[(size_t)i] = (int)std::round (param->load());
+    }
 }
 
 void CurCrossbreedAudioProcessor::releaseResources() {}
@@ -1029,6 +1308,12 @@ void CurCrossbreedAudioProcessor::dispatchModule (int moduleIdx,
                     (int)std::round(mTgSidechainFlt.load()),
                     mTgGateBypass.load() > 0.5f);
             break;
+        case 6: // Transient Designer
+            if (mTdBypass.load() < 0.5f)
+                mTransientDesigner.processBlock (buf,
+                    mTdAttack.load(), mTdSustain.load(),
+                    (int)std::round(mTdSpeed.load()), mTdMix.load());
+            break;
         default: break;
     }
 }
@@ -1042,18 +1327,16 @@ void CurCrossbreedAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
 
     if (mRackBypass.load() > 0.5f) return;
 
-    // Rebuild order if any slot param changed
     if (mOrderDirty.exchange (false))
     {
-        mModuleOrder[0] = juce::jlimit(0, 5, (int)std::round(mSlot0.load()));
-        mModuleOrder[1] = juce::jlimit(0, 5, (int)std::round(mSlot1.load()));
-        mModuleOrder[2] = juce::jlimit(0, 5, (int)std::round(mSlot2.load()));
-        mModuleOrder[3] = juce::jlimit(0, 5, (int)std::round(mSlot3.load()));
-        mModuleOrder[4] = juce::jlimit(0, 5, (int)std::round(mSlot4.load()));
-        mModuleOrder[5] = juce::jlimit(0, 5, (int)std::round(mSlot5.load()));
+        for (int i = 0; i < 7; ++i)
+        {
+            juce::String id ("slot"); id += i;
+            if (auto* param = apvts.getRawParameterValue (id))
+                mModuleOrder[(size_t)i] = juce::jlimit (0, 6, (int)std::round (param->load()));
+        }
     }
 
-    // Update OS index if changed
     const int osIdx = (int)mOSIndex.load();
     if (osIdx != mCurrentOSIndex)
     {
@@ -1061,22 +1344,18 @@ void CurCrossbreedAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
         rebuildOS (mBlockSize);
     }
 
-    // Apply rack input gain
     const float inGainLin = juce::Decibels::decibelsToGain (mRackInputGain.load());
     if (std::abs (inGainLin - 1.f) > 0.001f)
         for (int ch = 0; ch < numCh; ++ch)
             juce::FloatVectorOperations::multiply (buffer.getWritePointer(ch), inGainLin, N);
 
-    // Store dry for global rack mix
     juce::AudioBuffer<float> rackDry (numCh, N);
     for (int ch = 0; ch < numCh; ++ch)
         rackDry.copyFrom (ch, 0, buffer, ch, 0, N);
 
-    // Process each slot in current order
-    for (int slot = 0; slot < 6; ++slot)
-        dispatchModule (mModuleOrder[slot], buffer);
+    for (int slot = 0; slot < 7; ++slot)
+        dispatchModule (mModuleOrder[(size_t)slot], buffer);
 
-    // Apply rack output gain + global mix blend
     const float outGainLin = juce::Decibels::decibelsToGain (mRackOutputGain.load());
     const float mix        = mRackMix.load();
     for (int ch = 0; ch < numCh; ++ch)

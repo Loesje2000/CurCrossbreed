@@ -5,9 +5,6 @@
 class CurCrossbreedAudioProcessorEditor;
 
 //==============================================================================
-// One rack slot: owns all controls for its fixed module type.
-// The parent editor manages visual row ordering and drag-to-reorder.
-//==============================================================================
 class ModuleSlotComponent : public juce::Component
 {
 public:
@@ -18,7 +15,6 @@ public:
     void resized () override;
 
     int  getModuleType () const noexcept { return mModuleType; }
-    // Returns true if localPos is in the drag-handle strip (left 22px)
     bool isHandleHit   (juce::Point<int> localPos) const noexcept { return localPos.x < 22; }
 
     static const char* moduleName (int type) noexcept;
@@ -67,11 +63,17 @@ private:
     juce::Label      mTgGateThreshLb, mTgGateReleaseLb;
     juce::TextButton mTgGateBypassBtn { "GATE" };
 
+    // ── Transient Designer (type 6) ──────────────────────────────────────────
+    juce::ComboBox mTdSpeedBox;
+    juce::Label    mTdSpeedLabel;
+    juce::Slider   mTdAttack, mTdSustain, mTdMix;
+    juce::Label    mTdAttackLb, mTdSustainLb, mTdMixLb;
+
     // ── APVTS attachments ────────────────────────────────────────────────────
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> mBypassAttach;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>
-        mGhClipTypeAttach, mTblTapeTypeAttach, mTgSidechainAttach;
+        mGhClipTypeAttach, mTblTapeTypeAttach, mTgSidechainAttach, mTdSpeedAttach;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> mVvModeAttach;
 
@@ -84,7 +86,8 @@ private:
         mMrlTimeA,        mMrlFeedbackA,   mMrlToneA,       mMrlMixA,
         mSwWidthA,        mSwCrossoverA,
         mTgEqLowA,        mTgEqLoMidA,     mTgEqMidA,       mTgEqHiMidA,
-        mTgEqHighA,       mTgGateThreshA,  mTgGateReleaseA;
+        mTgEqHighA,       mTgGateThreshA,  mTgGateReleaseA,
+        mTdAttackA,       mTdSustainA,     mTdMixA;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> mTgGateBypassAttach;
 
@@ -113,7 +116,7 @@ private:
 
     // ── Layout constants ─────────────────────────────────────────────────────
     static constexpr int kW       = 1100;
-    static constexpr int kH       = 760;
+    static constexpr int kH       = 869;   // 86 header + 7 × 109 + 20 bottom pad
     static constexpr int kHeaderH = 86;
     static constexpr int kSlotH   = 109;
     static constexpr int kMargin  = 12;
@@ -160,13 +163,13 @@ private:
 
     CurCrossbreedLAF mLAF;
 
-    // ── Slot components (one per module type, indexed 0..5) ──────────────────
+    // ── Slot components ──────────────────────────────────────────────────────
     // mVisualOrder[rowIndex] = moduleType shown at that row
-    std::array<int, 6> mVisualOrder { 0, 1, 2, 3, 4, 5 };
-    std::unique_ptr<ModuleSlotComponent> mSlots[6];
+    std::array<int, 7> mVisualOrder { 0, 1, 2, 3, 4, 5, 6 };
+    std::unique_ptr<ModuleSlotComponent> mSlots[7];
 
     // ── Drag-to-reorder state ────────────────────────────────────────────────
-    int  mDragModule    = -1;   // moduleType being dragged (-1 = none)
+    int  mDragModule    = -1;
     int  mDragStartRow  = -1;
     int  mDragCurrentY  = 0;
     bool mIsDragging    = false;
@@ -183,20 +186,34 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> mOversampleA;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment>   mBypassA;
 
+    // ── Preset selector ──────────────────────────────────────────────────────
+    juce::ComboBox   mPresetBox;
+    juce::Label      mPresetLabel;
+    juce::TextButton mPresetPrevBtn {"<"};
+    juce::TextButton mPresetNextBtn {">"};
+    juce::TextButton mPresetSaveBtn {"SAVE"};
+    std::vector<juce::File> mUserPresetFiles;
+
     juce::TooltipWindow mTooltipWindow { this, 500 };
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-    int  rowY          (int row) const noexcept { return kHeaderH + row * kSlotH; }
-    int  rowAtY        (int y)   const noexcept
+    int  rowY   (int row) const noexcept { return kHeaderH + row * kSlotH; }
+    int  rowAtY (int y)   const noexcept
     {
         if (y < kHeaderH) return -1;
-        return juce::jlimit (0, 5, (y - kHeaderH) / kSlotH);
+        return juce::jlimit (0, 6, (y - kHeaderH) / kSlotH);
     }
     void updateSlotPositions ();
     void commitNewOrder      (int fromRow, int toRow);
     void setupKnob  (juce::Slider&, juce::Label&, const juce::String&);
     void setupCombo (juce::ComboBox&, juce::Label&, const juce::String&, const juce::StringArray&);
     void paintDragOverlay (juce::Graphics&);
+
+    void reloadPresetList ();
+    void saveCurrentPreset (const juce::String& name);
+    void loadUserPreset (const juce::File& f);
+    void resyncVisualOrder ();
+    juce::File getUserPresetsDir () const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CurCrossbreedAudioProcessorEditor)
 };
