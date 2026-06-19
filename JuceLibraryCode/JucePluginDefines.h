@@ -41,22 +41,22 @@
  #define JucePlugin_Enable_ARA             0
 #endif
 #ifndef  JucePlugin_Name
- #define JucePlugin_Name                   "Cur Crossbreed"
+ #define JucePlugin_Name                   "CurCrossbreed"
 #endif
 #ifndef  JucePlugin_Desc
- #define JucePlugin_Desc                   "Cur Crossbreed"
+ #define JucePlugin_Desc                   "CurCrossbreed"
 #endif
 #ifndef  JucePlugin_Manufacturer
  #define JucePlugin_Manufacturer           "Rubblesonic"
 #endif
 #ifndef  JucePlugin_ManufacturerWebsite
- #define JucePlugin_ManufacturerWebsite    "andrewvroomans.com"
+ #define JucePlugin_ManufacturerWebsite    "rubblesonic.com"
 #endif
 #ifndef  JucePlugin_ManufacturerEmail
  #define JucePlugin_ManufacturerEmail      ""
 #endif
 #ifndef  JucePlugin_ManufacturerCode
- #define JucePlugin_ManufacturerCode       0x52756273
+ #define JucePlugin_ManufacturerCode       0x4d616e75
 #endif
 #ifndef  JucePlugin_PluginCode
  #define JucePlugin_PluginCode             0x43524342
@@ -137,7 +137,7 @@
  #define JucePlugin_IAASubType             JucePlugin_PluginCode
 #endif
 #ifndef  JucePlugin_IAAName
- #define JucePlugin_IAAName                "Rubblesonic: Cur Crossbreed"
+ #define JucePlugin_IAAName                "Rubblesonic: CurCrossbreed"
 #endif
 #ifndef  JucePlugin_VSTNumMidiInputs
  #define JucePlugin_VSTNumMidiInputs       16
