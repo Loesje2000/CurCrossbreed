@@ -147,6 +147,8 @@ private:
                                   juce::Slider&) override;
         void drawComboBox        (juce::Graphics&, int w, int h, bool,
                                   int, int, int, int, juce::ComboBox&) override;
+    juce::PopupMenu::Options getOptionsForComboBoxPopupMenu (juce::ComboBox&, juce::Label&) override;
+
         void drawPopupMenuBackground (juce::Graphics&, int, int) override;
         void drawPopupMenuItem   (juce::Graphics&, const juce::Rectangle<int>&,
                                   bool, bool, bool, bool, bool,

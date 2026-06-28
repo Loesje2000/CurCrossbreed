@@ -818,6 +818,14 @@ void CurCrossbreedAudioProcessorEditor::CurCrossbreedLAF::drawComboBox (
                       juce::Justification::centredLeft, 1);
 }
 
+
+juce::PopupMenu::Options CurCrossbreedAudioProcessorEditor::CurCrossbreedLAF::getOptionsForComboBoxPopupMenu (juce::ComboBox& box,
+                                                                 juce::Label& label)
+{
+    return juce::LookAndFeel_V4::getOptionsForComboBoxPopupMenu (box, label)
+        .withParentComponent (box.getTopLevelComponent());
+}
+
 void CurCrossbreedAudioProcessorEditor::CurCrossbreedLAF::drawPopupMenuBackground (
     juce::Graphics& g, int width, int height)
 {
