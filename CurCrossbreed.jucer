@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="CRC342" name="CurCrossbreed" projectType="audioplug" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="Rubblesonic"
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" version="1.0.1" companyName="Rubblesonic"
               companyWebsite="rubblesonic.com" pluginCode="CRCB">
   <MAINGROUP id="CRC001" name="CurCrossbreed">
     <GROUP id="{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}" name="Source">

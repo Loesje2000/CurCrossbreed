@@ -40,10 +40,13 @@ private:
     int   mDelWritePos = 0;
     float mWowP  = 0, mWowP2 = 0, mWowP3 = 0;
     float mFlutP = 0, mFlutP2 = 0;
+    // Correlated transport irregularity; avoid independent per-sample delay noise.
+    float mFlutterIrregularity = 0.f;
     float mEQBassL = 0, mEQBassR = 0;
     float mEQPresL = 0, mEQPresR = 0;
     float mToneLPL = 0, mToneLPR = 0;
     float mDCBlkL  = 0, mDCBlkR  = 0;
+    juce::Random mRandom;
 
     float softSat (float x, float drive) noexcept;
     float tapeNL  (float x, int   tapeType) noexcept;

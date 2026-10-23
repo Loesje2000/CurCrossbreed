@@ -386,6 +386,7 @@ void TapeBoxLiteModule::reset () noexcept
 {
     mDelWritePos = 0;
     mWowP = mWowP2 = mWowP3 = mFlutP = mFlutP2 = 0.f;
+    mFlutterIrregularity = 0.f;
     mEQBassL = mEQBassR = mEQPresL = mEQPresR = 0.f;
     mToneLPL = mToneLPR = mDCBlkL = mDCBlkR = 0.f;
 }
@@ -445,6 +446,7 @@ void TapeBoxLiteModule::processBlock (juce::AudioBuffer<float>& buf,
     const float wowDepth2  = sr * 0.0008f * wowFlutter;
     const float wowDepth3  = sr * 0.0012f * wowFlutter;
     const float flutDepth  = sr * 0.0008f * wowFlutter;
+    const float flutterIrregularityCoeff = 1.f - std::exp (-pi2 * 35.f / sr);
 
     juce::AudioBuffer<float> dry (numCh, N);
     for (int ch = 0; ch < numCh; ++ch)
@@ -492,7 +494,6 @@ void TapeBoxLiteModule::processBlock (juce::AudioBuffer<float>& buf,
         }
     }
 
-    juce::Random rng;
     for (int i = 0; i < N; ++i)
     {
         float xL = L[i], xR = (numCh > 1) ? R[i] : L[i];
@@ -515,7 +516,12 @@ void TapeBoxLiteModule::processBlock (juce::AudioBuffer<float>& buf,
         const float wowMod = std::sin(pi2l*mWowP) *wowDepth1
                            + std::sin(pi2l*mWowP2)*wowDepth2
                            + std::sin(pi2l*mWowP3)*wowDepth3;
-        const float flutRnd = rng.nextFloat() * 0.15f;
+        // Mechanical transport error is correlated in time.  An independent
+        // random delay offset on every sample creates broadband phase noise.
+        const float randomTransportError = mRandom.nextFloat() * 2.f - 1.f;
+        mFlutterIrregularity += flutterIrregularityCoeff
+                              * (randomTransportError - mFlutterIrregularity);
+        const float flutRnd = mFlutterIrregularity * 0.15f;
         const float flutMod = (std::sin(pi2l*mFlutP) + 0.4f*std::sin(pi2l*mFlutP2+1.1f)+flutRnd)
                              * flutDepth;
         const float totalMod = 128.f + wowMod + flutMod;
